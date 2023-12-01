@@ -1,28 +1,65 @@
-fn get_table(data:&[String])->Vec<i32>
-{   
-    let mut tab = vec![0];
+fn count(s:String)->u32
+{
+    let v:Vec<_> = s.chars()
+                    .filter(|c| c.is_digit(10))
+                    .map(|c| c.to_digit(10).unwrap())
+                    .collect();
 
-    for s in data
-    {
-        //if s.is_empty() {  tab.push(0);                                        }
-          //         else { *tab.last_mut().unwrap()+=s.parse::<i32>().unwrap(); }
-    }
-
-    tab
+    10*v.first().unwrap() + v.last().unwrap()
 }
 
-pub fn part1(data:&[String])->i32
+fn count2(s:String)->usize
 {
-    //*get_table(data).iter().max().unwrap_or(&0)
-    0
+    let dict = vec![
+        ("0"    , 0),
+        ("1"    , 1),
+        ("2"    , 2),
+        ("3"    , 3),
+        ("4"    , 4),
+        ("5"    , 5),
+        ("6"    , 6),
+        ("7"    , 7),
+        ("8"    , 8),
+        ("9"    , 9),
+        ("one"  , 1),
+        ("two"  , 2),
+        ("three", 3),
+        ("four" , 4),
+        ("five" , 5),
+        ("six"  , 6),
+        ("seven", 7),
+        ("eight", 8),
+        ("nine" , 9)
+    ];
+
+    let first = dict.iter()
+                                   .map(|(d,v)| (s.find(d).unwrap_or(usize::MAX),v))
+                                   .min()
+                                   .unwrap();
+
+    let last = dict.iter()
+                                   .map(|(d,v)| 
+                                        ((if s.rfind(d).is_some() {s.rfind(d).unwrap() as i32} else {-1}),*v)
+                                )
+                                   .max()
+                                   .unwrap();
+                     
+    
+     10*first.1 + last.1
 }
 
-pub fn part2(data:&[String])->i32
+pub fn part1(data:&[String])->u32
 {
-    //let mut tab = get_table(data);
-    //tab.sort();
-    //tab.iter().rev().take(3).sum()    
-    0
+    data.iter()
+        .map(|s| count(s.to_string()))
+        .sum() 
+}
+
+pub fn part2(data:&[String])->usize
+{
+    data.iter()
+        .map(|s| count2(s.to_string()))
+        .sum()
 }
 
 #[allow(unused)]
@@ -38,42 +75,35 @@ fn test1()
 {
     let v = 
     vec![
-        "1000".to_string(),
-        "2000".to_string(),
-        "3000".to_string(),
-        "".to_string(),
-        "4000".to_string(),
-        "".to_string(),
-        "5000".to_string(),
-        "6000".to_string(),
-        "".to_string(),
-        "7000".to_string(),
-        "8000".to_string(),
-        "9000".to_string(),
-        "".to_string(),
-        "10000".to_string(),
-        ];
-    assert_eq!(part1(&v),24000);
+        "1abc2".to_string(),
+        "pqr3stu8vwx".to_string(),
+        "a1b2c3d4e5f".to_string(),
+        "treb7uchet".to_string(),
+    ];
+    assert_eq!(part1(&v),142);
 }
 
 #[test]
 fn test2()
 {
     let v = vec![
-        "1000".to_string(),
-        "2000".to_string(),
-        "3000".to_string(),
-        "".to_string(),
-        "4000".to_string(),
-        "".to_string(),
-        "5000".to_string(),
-        "6000".to_string(),
-        "".to_string(),
-        "7000".to_string(),
-        "8000".to_string(),
-        "9000".to_string(),
-        "".to_string(),
-        "10000".to_string(),        
+        "two1nine".to_string(),
+        "eightwothree".to_string(),
+        "abcone2threexyz".to_string(),
+        "xtwone3four".to_string(),
+        "4nineeightseven2".to_string(),
+        "zoneight234".to_string(),
+        "7pqrstsixteen".to_string(),        
     ];
-    assert_eq!(part2(&v),45000);
+    assert_eq!(part2(&v),281);
+}
+
+#[test]
+fn test3()
+{
+    let v = vec![
+        "eighthree".to_string(),
+        "sevenine".to_string(),
+    ];
+    assert_eq!(part2(&v),83+79);
 }
