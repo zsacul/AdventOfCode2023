@@ -1,7 +1,7 @@
 fn count(s:String)->u32
 {
     let v:Vec<_> = s.chars()
-                    .filter(|c| c.is_digit(10))
+                    .filter(|c| c.is_ascii_digit())
                     .map(|c| c.to_digit(10).unwrap())
                     .collect();
 
@@ -33,16 +33,15 @@ fn count2(s:String)->usize
     ];
 
     let first = dict.iter()
-                                   .map(|(d,v)| (s.find(d).unwrap_or(usize::MAX),v))
-                                   .min()
-                                   .unwrap();
+                    .map(|(d,v)| (s.find(d).unwrap_or(usize::MAX),v))
+                    .min()
+                    .unwrap();
 
     let last = dict.iter()
-                                   .map(|(d,v)| 
-                                        ((if s.rfind(d).is_some() {s.rfind(d).unwrap() as i32} else {-1}),*v)
-                                )
-                                   .max()
-                                   .unwrap();
+                   .filter(|(d,_)| s.rfind(d).is_some())
+                   .map(|(d,v)| (s.rfind(d).unwrap(),*v) )
+                   .max()
+                   .unwrap();
                      
     
      10*first.1 + last.1
