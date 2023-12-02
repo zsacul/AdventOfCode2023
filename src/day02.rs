@@ -1,81 +1,88 @@
-fn count(s:String)->i32
+fn games(s:String)->(usize,Vec<Vec<(i32,String)>>)
 {
     let tab   : Vec<&str> =      s.split(": ").collect(); 
     let left  : Vec<&str> = tab[0].split(' ').collect(); 
     let games : Vec<&str> = tab[1].split("; ").collect(); 
     
-    let id = left[1].parse::<i32>().unwrap();
+    let id = left[1].parse::<usize>().unwrap();
+    let mut res = Vec::new();
 
     for e in games
     {        
-        let mut red=0;
-        let mut green=0;
-        let mut blue=0;
+        let mut round_vec = Vec::new();
 
         for round in e.split(", ")   
         {
             let l : Vec<&str> = round.split(' ').collect(); 
             let n  = l[0].parse::<i32>().unwrap();
-            let c = l[1];
-
-            println!("n:[{}]",n);
-            println!("c:[{}]",c);
-    
-            match c
-            {
-                "red"   => red   += n,
-                "blue"  => blue  += n,
-                "green" => green += n,
-                _       => panic!("Unknown color:{}",c)
-            }
-    
-            if red>12 || green>13 || blue>14 { return 0; }
+            let color = l[1].to_string();
+            round_vec.push((n,color));
         }
+        res.push(round_vec);
+    }
+    (id,res)
+}
+
+fn sum_color(v:&[(i32,String)],color:&str)->usize
+{
+    v.iter()
+     .filter(|(_,c)| c==color)
+     .map(|(n,_)| *n as usize)
+     .sum()
+}
+
+fn max_color(v:&[(i32,String)],color:&str)->usize
+{
+    v.iter()
+     .filter(|(_,c)| c==color)
+     .map(|(n,_)| *n as usize)
+     .max()
+     .unwrap_or(0)
+}
+
+fn count(s:String)->usize
+{   
+    let games  = games(s);   
+    let id = games.0;
+
+    const   RED_LIMIT : usize = 12;
+    const GREEN_LIMIT : usize = 13;
+    const  BLUE_LIMIT : usize = 14;
+
+    for event in games.1
+    {        
+        if sum_color(&event,"red")  >  RED_LIMIT { return 0;}
+        if sum_color(&event,"green")>GREEN_LIMIT { return 0;}
+        if sum_color(&event,"blue") > BLUE_LIMIT { return 0;}
     }
     id   
 }
 
-fn count2(s:String)->i32
+fn count2(s:String)->usize
 {
-    let tab   : Vec<&str> =      s.split(": ").collect(); 
-    let left  : Vec<&str> = tab[0].split(' ').collect(); 
-    let games : Vec<&str> = tab[1].split("; ").collect(); 
-    
-    let id = left[1].parse::<i32>().unwrap();
-
+    let games  = games(s);   
     let mut mred=0;
     let mut mgreen=0;
     let mut mblue=0;
 
-    for e in games
+    for event in games.1
     {        
-        for round in e.split(", ")   
-        {
-            let l : Vec<&str> = round.split(' ').collect(); 
-            let n  = l[0].parse::<i32>().unwrap();
-            let c = l[1];
-   
-            match c
-            {
-                "red"   => mred = mred.max(n),
-                "blue"  => mblue = mblue.max(n),
-                "green" => mgreen = mgreen.max(n), 
-                _       => panic!("Unknown color:{}",c)
-            }
-        }
+        mred   =   mred.max(max_color(&event,"red"));
+        mgreen = mgreen.max(max_color(&event,"green"));
+        mblue  =  mblue.max(max_color(&event,"blue"));
     }
 
     mblue*mgreen*mred
 }
 
-pub fn part1(data:&[String])->i32
+pub fn part1(data:&[String])->usize
 {
     data.iter()
         .map(|s| count(s.to_string()))
         .sum() 
 }
 
-pub fn part2(data:&[String])->i32
+pub fn part2(data:&[String])->usize
 {
     data.iter()
         .map(|s| count2(s.to_string()))
