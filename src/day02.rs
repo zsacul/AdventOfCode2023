@@ -1,25 +1,26 @@
 fn games(s:String)->(usize,Vec<Vec<(i32,String)>>)
 {
     let tab   : Vec<&str> =      s.split(": ").collect(); 
-    let left  : Vec<&str> = tab[0].split(' ').collect(); 
+    let left  : Vec<&str> = tab[0].split(' ' ).collect(); 
     let games : Vec<&str> = tab[1].split("; ").collect(); 
     
     let id = left[1].parse::<usize>().unwrap();
-    let mut res = Vec::new();
+    let res = 
 
-    for e in games
-    {        
-        let mut round_vec = Vec::new();
-
-        for round in e.split(", ")   
-        {
-            let l : Vec<&str> = round.split(' ').collect(); 
-            let n  = l[0].parse::<i32>().unwrap();
-            let color = l[1].to_string();
-            round_vec.push((n,color));
-        }
-        res.push(round_vec);
-    }
+    games.iter()
+         .map(|e|
+             e.split(", ")
+              .map(|s| 
+              {
+                 let event : Vec<&str> = s.split(' ').collect(); 
+                 let n     = event[0].parse::<i32>().unwrap();
+                 let color = event[1].to_string();
+                 (n,color)
+              })
+              .collect()
+         )
+         .collect();
+    
     (id,res)
 }
 
@@ -42,36 +43,33 @@ fn max_color(v:&[(i32,String)],color:&str)->usize
 
 fn count(s:String)->usize
 {   
-    let games  = games(s);   
-    let id = games.0;
-
+    let (id,games) = games(s);   
+    
     const   RED_LIMIT : usize = 12;
     const GREEN_LIMIT : usize = 13;
     const  BLUE_LIMIT : usize = 14;
 
-    for event in games.1
+    for event in games
     {        
-        if sum_color(&event,"red")  >  RED_LIMIT { return 0;}
-        if sum_color(&event,"green")>GREEN_LIMIT { return 0;}
-        if sum_color(&event,"blue") > BLUE_LIMIT { return 0;}
+        if sum_color(&event,"red")   >   RED_LIMIT { return 0; }
+        if sum_color(&event,"green") > GREEN_LIMIT { return 0; }
+        if sum_color(&event,"blue")  >  BLUE_LIMIT { return 0; }
     }
     id   
 }
 
 fn count2(s:String)->usize
 {
-    let games  = games(s);   
     let mut mred=0;
     let mut mgreen=0;
     let mut mblue=0;
 
-    for event in games.1
+    for event in games(s).1
     {        
         mred   =   mred.max(max_color(&event,"red"));
         mgreen = mgreen.max(max_color(&event,"green"));
         mblue  =  mblue.max(max_color(&event,"blue"));
     }
-
     mblue*mgreen*mred
 }
 
