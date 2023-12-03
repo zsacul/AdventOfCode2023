@@ -3,7 +3,6 @@ use super::vec2::Vec2;
 
 fn get_hash_table(data:&[String])->HashMap<Vec2,char>
 {
-    
     let mut hash = HashMap::new();
     
     for (y,s) in data.iter().enumerate()
@@ -13,7 +12,6 @@ fn get_hash_table(data:&[String])->HashMap<Vec2,char>
             let k = Vec2::new(x as i64,y as i64);
             hash.insert(k,c);
         }
-
     }
 
     hash
@@ -25,7 +23,7 @@ fn is_symbol(k:Vec2,data:&mut HashMap<Vec2,char>)->bool
     {
         let c = *data.get(&pos).unwrap_or(&'.');
 
-        if c!='.' && c!='X' && !c.is_numeric()
+        if c!='.' && c!=' ' && !c.is_numeric()
         {
             println!("pos:{:?} sym:[{}]",k,c);
             return true;
@@ -34,7 +32,7 @@ fn is_symbol(k:Vec2,data:&mut HashMap<Vec2,char>)->bool
     false
 }
 
-fn value(k:Vec2,data:&mut HashMap<Vec2,char>)->u64
+fn value(k:Vec2,data:&mut HashMap<Vec2,char>)->(u64,bool)
 {
     let mut acc=0u64;
     let mut c = *data.get(&k).unwrap_or(&'.');
@@ -43,7 +41,7 @@ fn value(k:Vec2,data:&mut HashMap<Vec2,char>)->u64
     
     while c.is_numeric()
     {
-        data.insert(k,'X');
+        data.insert(k,' ');
         acc*=10;
         //println!("{}  {}",c,acc);
         acc+=c.to_digit(10).unwrap() as u64;
@@ -55,12 +53,12 @@ fn value(k:Vec2,data:&mut HashMap<Vec2,char>)->u64
         c = *data.get(&k).unwrap_or(&'.');
     }
 
-    if !was 
-    {
-        println!("{}",acc);
-        acc=0;
-    }
-    acc
+    //if !was 
+    //{
+      //  println!("{}",acc);
+//        acc=0;
+  //  }
+    (acc,was)
 }
 
 pub fn part1(data:&[String])->usize
@@ -80,31 +78,96 @@ pub fn part1(data:&[String])->usize
 
             if c.is_numeric()
             {
-                sum+=value(k, &mut h);
+                let v = value(k, &mut h);
+                if v.1 {
+                    sum+=v.0;
+                }
                // println!("sum:{}",sum);
             }
         } 
-
     }
     sum as usize
+}
 
-    /*
-    get_hash_table(data).iter()
-                        .map(
-                            |(l,&v)| 
-                            if l.contains('.') { 0 } else { v }
-                        )
-                        .filter(|&v| v<=100000)
-                        .sum()
-                         */
+fn is_multip(pos:Vec2,ids:&HashMap<Vec2, usize>,vals:&HashMap<usize,usize>)->usize
+{
+    let mut num = HashMap::new();
+    
+    for s in pos.around8()
+    {
+        let v = ids.get(&s).unwrap_or(&usize::MAX);
+        num.insert( v,v);
+    }
+
+    let mut res = 1;
+
+    println!("{:?} {:?} ",pos,num);
+
+    if num.len()-1==2
+    {
+        for k in num.values()
+        {
+            let v = **k;
+            if v!=usize::MAX 
+            {
+                res*=vals.get(&v).unwrap();
+            }
+        }
+    }
+      else 
+    {
+        res=0;
+    }
+
+    res
 }
 
 pub fn part2(data:&[String])->usize
 {
-    0
-    //data.iter()
-      //  .map(|s| count2(s.to_string()))
-        //.sum()
+    let mut h = get_hash_table(data);
+    let mut ids:HashMap<Vec2, usize> = HashMap::new();
+    let mut vals:HashMap<usize, usize> = HashMap::new();
+
+    let dy = data.len();
+    let dx = data[0].len();
+    let mut sum=0;
+    let mut id=0usize;
+
+    for y in 0..dy 
+    {
+        for x in 0..dx
+        {
+            let mut k = Vec2::new(x as i64,y as i64);
+            let mut c = h.get(&k).unwrap_or(&'.');
+
+            if c.is_numeric()
+            {
+                let mut acc=0;
+                while c.is_numeric() 
+                {
+                    ids.insert(k, id);
+                    
+                    acc*=10;
+                    acc+=c.to_digit(10).unwrap() as usize;
+
+                    h.insert(k, 'X');
+                    
+                    k.x+=1;
+                    c = h.get(&k).unwrap_or(&'.');
+                }
+                //let v = value(k, &mut h);
+                vals.insert(id,acc);
+                id+=1;
+               // println!("sum:{}",sum);
+            }
+        } 
+    }
+
+    h.iter()
+     .filter(|(k,v)| **v=='*')
+     .map(|(k,v)| is_multip(*k,&ids,&vals))
+     .sum()
+    //sum as usize
 }
 
 #[allow(unused)]
@@ -137,29 +200,16 @@ fn test1()
 fn test2()
 {
     let v = vec![
-            "$ cd /".to_string(),
-            "$ ls".to_string(),
-            "dir a".to_string(),
-            "14848514 b.txt".to_string(),
-            "8504156 c.dat".to_string(),
-            "dir d".to_string(),
-            "$ cd a".to_string(),
-            "$ ls".to_string(),
-            "dir e".to_string(),
-            "29116 f".to_string(),
-            "2557 g".to_string(),
-            "62596 h.lst".to_string(),
-            "$ cd e".to_string(),
-            "$ ls".to_string(),
-            "584 i".to_string(),
-            "$ cd ..".to_string(),
-            "$ cd ..".to_string(),
-            "$ cd d".to_string(),
-            "$ ls".to_string(),
-            "4060174 j".to_string(),
-            "8033020 d.log".to_string(),
-            "5626152 d.ext".to_string(),
-            "7214296 k".to_string()
-        ];
-    assert_eq!(part2(&v),24933642);
+        "467..114..".to_string(),
+        "...*......".to_string(),
+        "..35..633.".to_string(),
+        "......#...".to_string(),
+        "617*......".to_string(),
+        ".....+.58.".to_string(),
+        "..592.....".to_string(),
+        "......755.".to_string(),
+        "...$.*....".to_string(),
+        ".664.598..".to_string(),
+    ];
+    assert_eq!(part2(&v),467835);
 }
