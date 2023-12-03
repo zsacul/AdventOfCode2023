@@ -1,6 +1,8 @@
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
+use std::collections::HashMap;
+use super::vec2::Vec2;
 
 #[allow(unused)]
 pub fn read_1d_i32(path:&str)->Vec<i32>
@@ -110,10 +112,7 @@ pub fn split_to_usize(str:&str,sep:&str)->Vec<usize>
 
 
 #[allow(unused)]
-pub fn get_2d_iter(x_from:usize,x_to:usize,y_from:usize,y_to:usize)->
-//impl Iterator<Item =&'a (usize,usize)>
-//std::slice::Iter<'_,(usize,usize)>
-Vec<(usize,usize)>
+pub fn get_2d_iter(x_from:usize,x_to:usize,y_from:usize,y_to:usize)->Vec<(usize,usize)>
 {
     (y_from..y_to).flat_map(|y|
         (x_from..x_to).map(move |x|
@@ -122,4 +121,23 @@ Vec<(usize,usize)>
             }
         )
     ).collect::<Vec<(usize,usize)>>()
+}
+
+#[allow(unused)]
+pub fn get_2d_i(x_to:usize,y_to:usize)->Vec<(usize,usize)>
+{
+    get_2d_iter(0,x_to,0,y_to)
+}
+
+#[allow(unused)]
+pub fn get_hash_table(data:&[String])->HashMap<Vec2,char>
+{
+    let mut hash = HashMap::new();
+
+    for (y,x) in get_2d_i(data[0].len(),data.len())
+    {
+        hash.insert(Vec2::new(x as i64,y as i64),data[y].chars().nth(x).unwrap());
+    }
+
+    hash
 }

@@ -1,173 +1,114 @@
-use std::{collections::HashMap};
+use std::collections::{HashMap,HashSet};
 use super::vec2::Vec2;
-
-fn get_hash_table(data:&[String])->HashMap<Vec2,char>
-{
-    let mut hash = HashMap::new();
-    
-    for (y,s) in data.iter().enumerate()
-    {
-        for (x,c) in s.chars().enumerate()
-        {
-            let k = Vec2::new(x as i64,y as i64);
-            hash.insert(k,c);
-        }
-    }
-
-    hash
-}
+use super::tools;
 
 fn is_symbol(k:Vec2,data:&mut HashMap<Vec2,char>)->bool 
 {
-    for pos in k.around8().iter()
-    {
-        let c = *data.get(&pos).unwrap_or(&'.');
-
-        if c!='.' && c!=' ' && !c.is_numeric()
+    k.around8()
+     .iter()
+     .any(|pos|
         {
-            println!("pos:{:?} sym:[{}]",k,c);
-            return true;
+            let c = *data.get(pos).unwrap_or(&'.');   
+            c!='.' && c!=' ' && !c.is_numeric()
         }
-    }
-    false
+    )
 }
 
-fn value(k:Vec2,data:&mut HashMap<Vec2,char>)->(u64,bool)
+fn value(k:Vec2,data:&mut HashMap<Vec2,char>)->usize
 {
-    let mut acc=0u64;
-    let mut c = *data.get(&k).unwrap_or(&'.');
-    let mut k = k;
+    let mut acc = 0;
+    let mut pos = k;
     let mut was = false;
+    let mut c   = *data.get(&k).unwrap_or(&'.');
     
     while c.is_numeric()
     {
-        data.insert(k,' ');
+        data.insert(pos,' ');
         acc*=10;
-        //println!("{}  {}",c,acc);
-        acc+=c.to_digit(10).unwrap() as u64;
-        if is_symbol(k, data)
-        {
-            was = true;
-        }
-        k.x+=1;
-        c = *data.get(&k).unwrap_or(&'.');
+
+        acc+=c.to_digit(10).unwrap() as usize;
+        if is_symbol(pos, data) { was = true; }
+        pos.x+=1;
+        c = *data.get(&pos).unwrap_or(&'.');
     }
 
-    //if !was 
-    //{
-      //  println!("{}",acc);
-//        acc=0;
-  //  }
-    (acc,was)
+    if was { acc } else { 0 }
 }
 
 pub fn part1(data:&[String])->usize
 {
-    let mut h = get_hash_table(data);
-    println!("hash:{:?}",h);
-    let dy = data.len();
-    let dx = data[0].len();
-    let mut sum=0;
-
-    for y in 0..dy 
-    {
-        for x in 0..dx
+    let mut hash = tools::get_hash_table(data);   
+    
+    tools::get_2d_i(data[0].len(),data.len()).iter()
+    .map(|(x,y)|
         {
-            let k = Vec2::new(x as i64,y as i64);
-            let c = h.get(&k).unwrap_or(&'.');
-
-            if c.is_numeric()
-            {
-                let v = value(k, &mut h);
-                if v.1 {
-                    sum+=v.0;
-                }
-               // println!("sum:{}",sum);
-            }
-        } 
-    }
-    sum as usize
+            value(Vec2::new(*x as i64,*y as i64), &mut hash) 
+        }
+    ).sum()   
 }
 
-fn is_multip(pos:Vec2,ids:&HashMap<Vec2, usize>,vals:&HashMap<usize,usize>)->usize
+fn multiply(pos:Vec2,ids:&HashMap<Vec2, usize>,vals:&HashMap<usize,usize>)->usize
 {
-    let mut num = HashMap::new();
+    let mut num = HashSet::new();
     
     for s in pos.around8()
     {
-        let v = ids.get(&s).unwrap_or(&usize::MAX);
-        num.insert( v,v);
+        if ids.get(&s).is_some()
+        {
+            let v = ids.get(&s).unwrap();            
+            num.insert(vals.get(v).unwrap());
+        }
     }
 
-    let mut res = 1;
-
-    println!("{:?} {:?} ",pos,num);
-
-    if num.len()-1==2
+    if num.len()==2
     {
-        for k in num.values()
-        {
-            let v = **k;
-            if v!=usize::MAX 
-            {
-                res*=vals.get(&v).unwrap();
-            }
-        }
+        num.iter()           
+           .copied()
+           .product()
     }
       else 
     {
-        res=0;
+        0
     }
-
-    res
 }
 
 pub fn part2(data:&[String])->usize
 {
-    let mut h = get_hash_table(data);
-    let mut ids:HashMap<Vec2, usize> = HashMap::new();
-    let mut vals:HashMap<usize, usize> = HashMap::new();
-
-    let dy = data.len();
-    let dx = data[0].len();
-    let mut sum=0;
+    let mut h     = tools::get_hash_table(data);
+    let mut ids  : HashMap<Vec2, usize>  = HashMap::new();
+    let mut vals : HashMap<usize, usize> = HashMap::new();
     let mut id=0usize;
 
-    for y in 0..dy 
+    for (x,y) in tools::get_2d_i(data[0].len(),data.len()).iter()
     {
-        for x in 0..dx
+        let mut k = Vec2::new(*x as i64,*y as i64);
+        let mut c = h.get(&k).unwrap_or(&'.');
+
+        if c.is_numeric()
         {
-            let mut k = Vec2::new(x as i64,y as i64);
-            let mut c = h.get(&k).unwrap_or(&'.');
-
-            if c.is_numeric()
+            let mut acc=0;
+            while c.is_numeric() 
             {
-                let mut acc=0;
-                while c.is_numeric() 
-                {
-                    ids.insert(k, id);
-                    
-                    acc*=10;
-                    acc+=c.to_digit(10).unwrap() as usize;
+                ids.insert(k, id);
+                
+                acc*=10;
+                acc+=c.to_digit(10).unwrap() as usize;
 
-                    h.insert(k, 'X');
-                    
-                    k.x+=1;
-                    c = h.get(&k).unwrap_or(&'.');
-                }
-                //let v = value(k, &mut h);
-                vals.insert(id,acc);
-                id+=1;
-               // println!("sum:{}",sum);
+                h.insert(k, 'X');
+                
+                k.x+=1;
+                c = h.get(&k).unwrap_or(&'.');
             }
-        } 
+            
+            vals.insert(id,acc);
+            id+=1;
+        }
     }
 
     h.iter()
-     .filter(|(k,v)| **v=='*')
-     .map(|(k,v)| is_multip(*k,&ids,&vals))
+     .filter(|(_,v)| **v=='*')
+     .map(|(k,_)| multiply(*k,&ids,&vals))
      .sum()
-    //sum as usize
 }
 
 #[allow(unused)]
