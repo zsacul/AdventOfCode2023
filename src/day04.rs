@@ -1,17 +1,12 @@
 use std::collections::HashSet;
-use std::collections::VecDeque;
 
 fn game(s:String)->HashSet<i32>
 {
-    let tab   : Vec<&str> =      s.split(": ").collect(); 
-    let left  : Vec<&str> = tab[0].split(' ' ).collect(); 
-    let games : Vec<&str> = tab[1].split(" | ").collect(); 
-
-    let won : Vec<&str> = games[0].split_whitespace().collect(); 
-    let rnd : Vec<&str> = games[1].split_whitespace().collect(); 
+    let tab   : Vec<&str> =        s.split(": ").collect(); 
+    let games : Vec<&str> =   tab[1].split(" | ").collect(); 
+    let won   : Vec<&str> = games[0].split_whitespace().collect(); 
+    let rnd   : Vec<&str> = games[1].split_whitespace().collect(); 
     
-    //println!("won:{:?}",won);
-    //println!("rnd:{:?}",rnd);
 
     let w :Vec<i32>= won.iter()
          .map(|e| e.parse::<i32>().unwrap() )
@@ -46,40 +41,24 @@ fn games1(s:String)->usize
     {
         1<<(common.len()-1)
     }
-       
 }
 
 fn count(s:String)->usize
 {   
     games1(s)
 }
-//862
-//902
+
 fn count2(s:String)->usize
 {
-    
-    
-
     let common = game(s);
-    if (common.len()==0)
+    if common.len()==0
     {
-        1
+        0
     }
     else
     {
         common.len()
-        //let mut res=1;
-        //for _i in 0..common.len()
-        //{
-          //  res*=2;
-        //}
-        //res
     }
-
-    //let mut mred=0;
-    //let mut mgreen=0;
-    //let mut mblue=0;
-    //mblue*mgreen*mred
 }
 
 pub fn part1(data:&[String])->usize
@@ -91,16 +70,41 @@ pub fn part1(data:&[String])->usize
 
 pub fn part2(data:&[String])->usize
 {
-    let stack = VecDeque<i64>::new();
-    let mut res = 0;
+    let mut stack = vec![];
 
-    for (id,s) in data.iter().enumerate()
+    for ii in 0..data.len()
     {
-        let id = count2(s.to_string());
+        stack.push(data.len()-1-ii);
+    }   
+    
+    let mut res = data.len();
+
+    let mut cnt = vec![0;data.len()];
+
+    //stack.push(usize::MAX-0);
+    //for (id,s) in data.iter().enumerate()
+    while !stack.is_empty()
+    {
+        let id = stack.pop().unwrap();//_front().unwrap();
+       
         
+      /*  if was.contains(&id)
+        {
+            continue;
+        }
+        was.insert(id);*/
         
-        
+        let count = count2(data[id].to_string());
+        //println!("id:{}={}",id+1,count);
+        cnt[id]+=count;
+        res+=count;
+        for i in id+1..=(id+count).min(data.len()-1)
+        {
+            stack.push(i);
+        }
     }
+
+    println!("cnt:{:?}",cnt);
     res
 
     //data.iter()
