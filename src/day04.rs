@@ -8,57 +8,30 @@ fn game(s:String)->HashSet<i32>
     let rnd   : Vec<&str> = games[1].split_whitespace().collect(); 
     
 
-    let w :Vec<i32>= won.iter()
-         .map(|e| e.parse::<i32>().unwrap() )
-         .collect();
-   let r:Vec<i32> = rnd.iter()
-        .map(|e| e.parse::<i32>().unwrap() )
-        .collect();
+    let w : Vec<i32> = won.iter()
+                          .map(|e| e.parse::<i32>().unwrap() )
+                          .collect();
+    let r : Vec<i32> = rnd.iter()
+                          .map(|e| e.parse::<i32>().unwrap() )
+                          .collect();
 
     let mut common = HashSet::new();
-    for i in w.iter()
+    for i in w
     {
-        for j in r.iter()
-        {
-            if i==j
-            {
-                common.insert(*i);
-            }
-        }
+        if r.contains(&i) { common.insert(i); }
     }  
     common
 }
 
-fn games1(s:String)->usize
-{
-    let common = game(s);
-
-    if common.len()==0
-    {
-        0
-    }
-      else 
-    {
-        1<<(common.len()-1)
-    }
-}
-
 fn count(s:String)->usize
 {   
-    games1(s)
+    let points = game(s).len();
+    if points>0 { 1<<(points-1) } else { 0 }
 }
 
 fn count2(s:String)->usize
 {
-    let common = game(s);
-    if common.len()==0
-    {
-        0
-    }
-    else
-    {
-        common.len()
-    }
+    game(s).len()
 }
 
 pub fn part1(data:&[String])->usize
@@ -70,46 +43,31 @@ pub fn part1(data:&[String])->usize
 
 pub fn part2(data:&[String])->usize
 {
+    let points:Vec<usize> = 
+    data.iter()
+        .map(|s| count2(s.to_string()))
+        .collect();
+
     let mut stack = vec![];
 
     for ii in 0..data.len()
     {
-        stack.push(data.len()-1-ii);
+        stack.push(ii);
     }   
     
     let mut res = data.len();
-
-    let mut cnt = vec![0;data.len()];
-
-    //stack.push(usize::MAX-0);
-    //for (id,s) in data.iter().enumerate()
-    while !stack.is_empty()
+   
+    while let Some(id) = stack.pop()
     {
-        let id = stack.pop().unwrap();//_front().unwrap();
-       
-        
-      /*  if was.contains(&id)
-        {
-            continue;
-        }
-        was.insert(id);*/
-        
-        let count = count2(data[id].to_string());
-        //println!("id:{}={}",id+1,count);
-        cnt[id]+=count;
-        res+=count;
-        for i in id+1..=(id+count).min(data.len()-1)
+        res+=points[id];
+
+        for i in id+1..=(id + points[id]).min(data.len()-1)
         {
             stack.push(i);
         }
     }
 
-    println!("cnt:{:?}",cnt);
     res
-
-    //data.iter()
-      //  .map(|s| count2(s.to_string()))
-        //.sum()
 }
 
 #[allow(unused)]
