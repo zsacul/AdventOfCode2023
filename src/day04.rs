@@ -6,12 +6,11 @@ fn game(s:String)->HashSet<i32>
     let games : Vec<&str> =   tab[1].split(" | ").collect(); 
     let won   : Vec<&str> = games[0].split_whitespace().collect(); 
     let rnd   : Vec<&str> = games[1].split_whitespace().collect(); 
-    
 
     let w : Vec<i32> = won.iter()
                           .map(|e| e.parse::<i32>().unwrap() )
                           .collect();
-    let r : Vec<i32> = rnd.iter()
+    let r : HashSet<i32> = rnd.iter()
                           .map(|e| e.parse::<i32>().unwrap() )
                           .collect();
 
@@ -29,11 +28,6 @@ fn count(s:String)->usize
     if points>0 { 1<<(points-1) } else { 0 }
 }
 
-fn count2(s:String)->usize
-{
-    game(s).len()
-}
-
 pub fn part1(data:&[String])->usize
 {
     data.iter()
@@ -43,16 +37,15 @@ pub fn part1(data:&[String])->usize
 
 pub fn part2(data:&[String])->usize
 {
-    let points:Vec<usize> = 
-    data.iter()
-        .map(|s| count2(s.to_string()))
-        .collect();
+    let points : Vec<usize> = data.iter()
+                                  .map(|s| game(s.to_string()).len())
+                                  .collect();
 
     let mut stack = vec![];
 
-    for ii in 0..data.len()
+    for i in 0..data.len()
     {
-        stack.push(ii);
+        stack.push(i);
     }   
     
     let mut res = data.len();
