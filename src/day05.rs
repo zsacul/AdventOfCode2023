@@ -25,7 +25,7 @@ impl Range {
 
 struct Value
 {
-    name : String,
+    _name : String,
     data : Vec<Range>
 }
 
@@ -35,7 +35,7 @@ impl Value
     {
         Value
         {
-            name,
+            _name:name,
             data
         }
     }
@@ -69,14 +69,14 @@ impl Value
         id
     }
 
+    #[allow(unused)]
     fn print(&self)
     {
-        println!("n:{:?}",self.name);
+        println!("n:{:?}",self._name);
         println!("v:{:?}",self.data);
     }
     
 }
-
 
 fn compute(id:usize,values:&[Value])->usize
 {
@@ -91,28 +91,15 @@ fn compute(id:usize,values:&[Value])->usize
 
 fn get_values(data:&[String])->Vec<Value>
 {
-    let mut values : Vec<Value>  = Vec::new();
-    let mut acc    : Vec<String> = Vec::new();
-    
-    for s in data[2..].iter()
-    {
-        if s.is_empty()
-        {
-            values.push(Value::parse(&acc));
-            acc.clear();
-        }
-          else
-        {
-            acc.push(s.clone());
-        }
-    }
-    values.push(Value::parse(&acc));
-    values
+    let subs = data.split(|s| s.is_empty()).collect::<Vec<&[String]>>();
+    subs.iter()
+        .map(|s| Value::parse(s))
+        .collect()
 }
 
 pub fn part1(data:&[String])->usize
 {   
-    let values = get_values(data);
+    let values = get_values(&data[2..]);
     let seeds:Vec<usize> = data[0][7..].split(' ').map(|s|s.parse::<usize>().unwrap()).collect();
     
     seeds.iter()
@@ -122,7 +109,7 @@ pub fn part1(data:&[String])->usize
 
 pub fn part2(data:&[String])->usize
 {
-    let values = get_values(data);
+    let values = get_values(&data[2..]);
     let seeds:Vec<usize> = data[0][7..].split(' ').map(|s|s.parse::<usize>().unwrap()).collect();
 
     let possible_min = values.iter()
