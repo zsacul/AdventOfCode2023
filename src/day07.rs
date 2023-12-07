@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-fn calc(c:String)->HashMap<char,usize>
+fn get_hand(c:String)->HashMap<char,usize>
 {
     let mut map = HashMap::new();
     for ch in c.chars()
@@ -42,7 +42,7 @@ fn eval_hand(hand:&[usize])->usize
 
 fn get_power(s:String)->usize
 {
-    let hand = vals(calc(s.to_string()));
+    let hand = vals(get_hand(s.to_string()));
     const SCALE : usize = 16*16*16*16*16*16;
     eval_hand(&hand)*SCALE
 }
@@ -90,7 +90,7 @@ fn calc_sum(v:&mut Vec<(usize,usize)>)->usize
      .sum()
 }
 
-fn calc2(f: fn(String)->(usize,usize),data:&[String])->usize
+fn compute(f: fn(String)->(usize,usize),data:&[String])->usize
 {
     let mut v : Vec<(usize,usize)> = data.iter()
                                          .map(|s| f(s.to_string()))
@@ -99,24 +99,12 @@ fn calc2(f: fn(String)->(usize,usize),data:&[String])->usize
     calc_sum(&mut v)
 }
 
-pub fn part1(data:&[String])->usize
-{
-    let h1 = |s:String|->(usize,usize) { row1(s.to_string())};
-    calc2(h1,data)
-}
-
-pub fn part2(data:&[String])->usize
-{
-    let h1 = |s:String|->(usize,usize) { row2(s.to_string())};
-    calc2(h1,data)
-}
-
 #[allow(unused)]
 pub fn solve(data:&[String])
 {    
     println!("Day7");
-    println!("part1:{}",part1(data));
-    println!("part2:{}",part2(data));
+    println!("part1:{}",compute(row1,data));
+    println!("part2:{}",compute(row2,data));
 }
 
 #[test]
@@ -130,7 +118,7 @@ fn test1()
         "KTJJT 220".to_string(),
         "QQQJA 483".to_string(),
     ];
-    assert_eq!(part1(&v),6440);
+    assert_eq!(compute(row1,&v),6440);
 }
 
 #[test]
@@ -144,5 +132,5 @@ fn test2()
         "KTJJT 220".to_string(),
         "QQQJA 483".to_string(),
     ];
-    assert_eq!(part2(&v),5905);
+    assert_eq!(compute(row2,&v),5905);
 }
