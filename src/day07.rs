@@ -85,7 +85,7 @@ fn row22(s:String)->usize
     {
         for to in "23456789TJQKA".chars()
         {
-            let sd = s.clone().replace('J', to.to_string().as_str()); //s.replace(from, to)
+            let sd = s.clone().replace('J', to.to_string().as_str());
             let t = power2(sd,s.clone());
 
             if t>res
@@ -110,22 +110,25 @@ fn calc_sum(v:&mut Vec<(usize,usize)>)->usize
        .sum()
 }
 
-pub fn part1(data:&[String])->usize
+fn calc2(f: fn(String)->(usize,usize),data:&[String])->usize
 {
     let mut v : Vec<(usize,usize)> = data.iter()
-                                         .map(|s| row1(s.to_string()))
+                                         .map(|s| f(s.to_string()))
                                          .collect();
     v.sort_by(|a,b| b.0.cmp(&a.0));
     calc_sum(&mut v)
 }
 
+pub fn part1(data:&[String])->usize
+{
+    let h1 = |s:String|->(usize,usize) { row1(s.to_string())};
+    calc2(h1,data)
+}
+
 pub fn part2(data:&[String])->usize
 {
-    let mut v : Vec<(usize,usize)> = data.iter()
-                                         .map(|s| row2(s.to_string()))
-                                         .collect();
-    v.sort_by(|a,b| b.0.cmp(&a.0));
-    calc_sum(&mut v)
+    let h1 = |s:String|->(usize,usize) { row2(s.to_string())};
+    calc2(h1,data)
 }
 
 #[allow(unused)]
