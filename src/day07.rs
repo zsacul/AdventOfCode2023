@@ -47,19 +47,11 @@ fn get_power(s:String)->usize
     eval_hand(&hand)*SCALE
 }
 
-fn power(s:String)->usize
-{
-    let power = get_power(s.to_string());
-    let spare = s.chars()
-                        .fold(0, |s,c| s*16 + card1(c)); 
-    power + spare
-}
-
-fn power2(s:String,org:String)->usize
+fn power(s:String,org:String,card_value:fn(char)->usize)->usize
 {
     let power = get_power(s.to_string());
     let spare = org.chars()
-                          .fold(0, |s,c| s*16 + card2(c)); 
+                   .fold(0, |s,c| s*16 + card_value(c)); 
     power + spare
 }
 
@@ -67,7 +59,7 @@ fn row1(s:String)->(usize,usize)
 {
     let tab : Vec<&str> = s.split(' ')
                            .collect();                                        
-    (power(tab[0].to_string()) , tab[1].parse::<usize>().unwrap() )
+    (power(tab[0].to_string(),tab[0].to_string(),card1) , tab[1].parse::<usize>().unwrap() )
 }
 
 fn row2(s:String)->(usize,usize)
@@ -79,35 +71,23 @@ fn row2(s:String)->(usize,usize)
 
 fn row22(s:String)->usize
 {
-    let mut res = power2(s.clone(),s.clone());
-    
-    if s.contains('J')
-    {
-        for to in "23456789TJQKA".chars()
-        {
-            let sd = s.clone().replace('J', to.to_string().as_str());
-            let t = power2(sd,s.clone());
-
-            if t>res
-            {
-                res = t;
-            }
-        }
-    }
-
-    res
+    "23456789TJQKA".chars()
+                   .map(|to| 
+                        {
+                            let s_new = s.replace('J', to.to_string().as_str());
+                            power(s_new,s.clone(),card2)
+                        }
+                   )
+                   .max()
+                   .unwrap()
 }
 
 fn calc_sum(v:&mut Vec<(usize,usize)>)->usize
 {
-    let  rr = v.iter()
-            .enumerate()
-            .map(|(id,card)| (card.1,(v.len()-id)))
-            .collect::<Vec<(usize,usize)>>();
-     
-     rr.iter()
-       .map(|f| f.0*f.1 )
-       .sum()
+    v.iter()
+     .enumerate()
+     .map(|(id,card)| card.1*(v.len()-id))
+     .sum()
 }
 
 fn calc2(f: fn(String)->(usize,usize),data:&[String])->usize
