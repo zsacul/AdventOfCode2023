@@ -17,8 +17,7 @@ fn count(times:&Vec<i64>,dists:&Vec<i64>,level:usize)->usize
 {       
     if level>=times.len() { return 1; }
     
-    (0..times[level]).into_iter()
-                     .filter(|push| dist(*push,times[level])>dists[level])
+    (0..times[level]).filter(|push| dist(*push,times[level])>dists[level])
                      .map(|_| count(times,dists,level+1))
                      .sum()
 }

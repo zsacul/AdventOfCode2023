@@ -13,13 +13,8 @@ fn calc(c:String)->HashMap<char,usize>
 
 fn vals(h:HashMap<char,usize>)->Vec<usize>
 {
-    let mut v : Vec<(char,usize)> = h.into_iter().collect();
-    v.sort_by(|a,b| a.0.cmp(&b.0));
-    v.sort_by(|a,b| b.1.cmp(&a.1));
-    let mut res = v.iter()
-                   .map(|(_,v)| *v)
-                   .collect::<Vec<usize>>();
-    res.sort_by(|a,b| b.cmp(&a));
+    let mut res =  h.values().copied().collect::<Vec<usize>>();
+    res.sort_by(|a,b| b.cmp(a));
     res
 }
 
@@ -48,7 +43,7 @@ fn eval_hand(hand:&[usize])->usize
 fn get_power(s:String)->usize
 {
     let hand = vals(calc(s.to_string()));
-    let SCALE = 16*16*16*16*16*16;
+    const SCALE : usize = 16*16*16*16*16*16;
     eval_hand(&hand)*SCALE
 }
 
@@ -70,23 +65,23 @@ fn power2(s:String,org:String)->usize
 
 fn row1(s:String)->(usize,usize)
 {
-    let t : Vec<&str>= s.split(" ")
-                        .collect();                                        
-    (power(t[0].to_string()),t[1].parse::<usize>().unwrap() )
+    let tab : Vec<&str> = s.split(' ')
+                           .collect();                                        
+    (power(tab[0].to_string()) , tab[1].parse::<usize>().unwrap() )
 }
 
 fn row2(s:String)->(usize,usize)
 {
-    let tt :Vec<&str>= s.split(" ")
-                        .collect();                                        
-    ( row22(tt[0].to_string()),tt[1].parse::<usize>().unwrap() )
+    let tab : Vec<&str> = s.split(' ')
+                           .collect();                                        
+    ( row22(tab[0].to_string()) , tab[1].parse::<usize>().unwrap() )
 }
 
 fn row22(s:String)->usize
 {
     let mut res = power2(s.clone(),s.clone());
     
-    if s.contains("J")
+    if s.contains('J')
     {
         for to in "23456789TJQKA".chars()
         {
