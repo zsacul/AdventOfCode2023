@@ -1,15 +1,12 @@
 use std::collections::HashMap;
-//extern crate rand;
-
-use rand::Rng;
 
 fn calc(c:String)->HashMap<char,usize>
 {
     let mut map = HashMap::new();
     for ch in c.chars()
     {
-        let counter = map.entry(ch).or_insert(0);
-        *counter += 1;
+        *map.entry(ch)
+            .or_insert(0)+=1;
     }
     map
 }
@@ -26,137 +23,76 @@ fn vals(h:HashMap<char,usize>)->Vec<usize>
     res
 }
 
-fn card(c:char)->usize
+fn card1(c:char)->usize
 {
-    match c
-    {
-        'A' => 14,
-        'K' => 13,
-        'Q' => 12,
-        'J' => 11,
-        'T' => 10,
-        '9' => 9,
-        '8' => 8,
-        '7' => 7,
-        '6' => 6,
-        '5' => 5,
-        '4' => 4,
-        '3' => 3,
-        '2' => 2,
-        _ => panic!("wrong card"),        
-    }
+    14 - "AKQJT98765432".find(c).unwrap()
 }
 
 fn card2(c:char)->usize
 {
-    match c
-    {
-        'A' => 14,
-        'K' => 13,
-        'Q' => 12,
-        'T' => 11,
-        '9' => 10,
-        '8' => 9,
-        '7' => 8,
-        '6' => 7,
-        '5' => 6,
-        '4' => 5,
-        '3' => 4,
-        '2' => 3,
-        'J' => 2,
-        _ => panic!("wrong card"),        
-    }
+    14 - "AKQT98765432J".find(c).unwrap()
+}
+
+fn eval_hand(hand:&[usize])->usize
+{
+         if hand==vec![5]               { 7 }
+    else if hand==vec![4,1]             { 6 }
+    else if hand==vec![3,2]             { 5 }
+    else if hand==vec![3,1,1]           { 4 }
+    else if hand==vec![2,2,1]           { 3 }
+    else if hand.len()==4 && hand[0]==2 { 2 }
+    else if hand.len()==5               { 1 }
+    else                                { panic!("wrong hand"); }
+}
+
+fn get_power(s:String)->usize
+{
+    let hand = vals(calc(s.to_string()));
+    let SCALE = 16*16*16*16*16*16;
+    eval_hand(&hand)*SCALE
 }
 
 fn power(s:String)->usize
 {
-    let hand = vals(calc(s.to_string()));
-    let scale = 16*16*16*16*16*16;
-    let mut power = 0;
-
-         if hand==vec![5]               { power = 7*scale; }
-    else if hand==vec![4,1]             { power = 6*scale; }
-    else if hand==vec![3,2]             { power = 5*scale; }
-    else if hand==vec![3,1,1]           { power = 4*scale; }
-    else if hand==vec![2,2,1]           { power = 3*scale; }
-    else if hand.len()==4 && hand[0]==2 { power = 2*scale; }
-    else if hand.len()==5               { power = 1*scale; }
-
-    //println!("{} {:?}",power/scale,hand);
-    let mut c_val = 0;
-    //A, K, Q, J, T, 9, 8, 7, 6, 5, 4, 3, or 2
-    for c in s.chars()
-    {
-        c_val*=16;
-        c_val += card(c);
-    }
-
-   // println!("{} {:?}",power + c_val,hand);
-    power + c_val
+    let power = get_power(s.to_string());
+    let spare = s.chars()
+                        .fold(0, |s,c| s*16 + card1(c)); 
+    power + spare
 }
 
 fn power2(s:String,org:String)->usize
 {
-    let hand = vals(calc(s.to_string()));
-    let scale = 16*16*16*16*16*16;
-    let mut power = 0;
-
-         if hand==vec![5]               { power = 7*scale; }
-    else if hand==vec![4,1]             { power = 6*scale; }
-    else if hand==vec![3,2]             { power = 5*scale; }
-    else if hand==vec![3,1,1]           { power = 4*scale; }
-    else if hand==vec![2,2,1]           { power = 3*scale; }
-    else if hand.len()==4 && hand[0]==2 { power = 2*scale; }
-    else if hand.len()==5               { power = 1*scale; }
-
-
-    //println!("{} {:?}",power/scale,hand);
-    let mut c_val = 0;
-    //A, K, Q, J, T, 9, 8, 7, 6, 5, 4, 3, or 2
-    for c in org.chars()
-    {
-        c_val*=16;
-        c_val += card2(c);
-    }
-
-   // println!("{} {:?}",power + c_val,hand);
-    power + c_val
+    let power = get_power(s.to_string());
+    let spare = org.chars()
+                          .fold(0, |s,c| s*16 + card2(c)); 
+    power + spare
 }
 
-fn row(s:String)->(usize,usize)
+fn row1(s:String)->(usize,usize)
 {
-    let tt :Vec<&str>= s.split(" ")
-              .collect();                                        
-    (power(tt[0].to_string()),tt[1].parse::<usize>().unwrap() )
+    let t : Vec<&str>= s.split(" ")
+                        .collect();                                        
+    (power(t[0].to_string()),t[1].parse::<usize>().unwrap() )
 }
 
 fn row2(s:String)->(usize,usize)
 {
     let tt :Vec<&str>= s.split(" ")
-              .collect();                                        
+                        .collect();                                        
     ( row22(tt[0].to_string()),tt[1].parse::<usize>().unwrap() )
 }
 
 fn row22(s:String)->usize
 {
     let mut res = power2(s.clone(),s.clone());
-    let mut rng = rand::thread_rng();
     
     if s.contains("J")
     {
         for to in "23456789TJQKA".chars()
         {
-            //let mut sd = s.clone().replace("J", "*");
-            //println!("sd {}",sd);
-            //let from = '*';
-
-            //let rand_i:usize = rng.gen();
-            //let id = rand_i%cards.len();
-            //let to = cards.chars().nth(id).unwrap();
-
             let sd = s.clone().replace('J', to.to_string().as_str()); //s.replace(from, to)
-
             let t = power2(sd,s.clone());
+
             if t>res
             {
                 res = t;
@@ -167,29 +103,25 @@ fn row22(s:String)->usize
     res
 }
 
-
-pub fn part1(data:&[String])->usize
+fn calc_sum(v:&mut Vec<(usize,usize)>)->usize
 {
-    let mut v : Vec<(usize,usize)> = data.iter()
-                                         .map(|s| row(s.to_string()))
-                                         .collect();
-
-    //v.sort_by(|a,b| b.1.cmp(&a.1));
-    v.sort_by(|a,b| b.0.cmp(&a.0));
-
-    println!("{:?}",v);
-
     let  rr = v.iter()
-                              .enumerate()
-                              .map(|(id,card)| (card.1,(data.len()-id)))
-                              .collect::<Vec<(usize,usize)>>();
-
-
-     println!("rr {:?}",rr );
+            .enumerate()
+            .map(|(id,card)| (card.1,(v.len()-id)))
+            .collect::<Vec<(usize,usize)>>();
      
      rr.iter()
        .map(|f| f.0*f.1 )
        .sum()
+}
+
+pub fn part1(data:&[String])->usize
+{
+    let mut v : Vec<(usize,usize)> = data.iter()
+                                         .map(|s| row1(s.to_string()))
+                                         .collect();
+    v.sort_by(|a,b| b.0.cmp(&a.0));
+    calc_sum(&mut v)
 }
 
 pub fn part2(data:&[String])->usize
@@ -197,24 +129,8 @@ pub fn part2(data:&[String])->usize
     let mut v : Vec<(usize,usize)> = data.iter()
                                          .map(|s| row2(s.to_string()))
                                          .collect();
-
-
-    //v.sort_by(|a,b| b.1.cmp(&a.1));
     v.sort_by(|a,b| b.0.cmp(&a.0));
-
-    println!("{:?}",v);
-
-    let rr = v.iter()
-                              .enumerate()
-                              .map(|(id,card)| (card.1,(data.len()-id)))
-                              .collect::<Vec<(usize,usize)>>();
-
-
-     //println!("rr {:?}",rr );
-     
-     rr.iter()
-       .map(|f| f.0*f.1 )
-       .sum()
+    calc_sum(&mut v)
 }
 
 #[allow(unused)]
