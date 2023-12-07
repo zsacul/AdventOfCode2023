@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-fn get_hand(c:String)->HashMap<char,usize>
+fn get_hand(c:&str)->HashMap<char,usize>
 {
     let mut map = HashMap::new();
     for ch in c.chars()
@@ -40,16 +40,16 @@ fn eval_hand(hand:&[usize])->usize
     else                                { panic!("wrong hand"); }
 }
 
-fn get_power(s:String)->usize
+fn get_power(s:&str)->usize
 {
-    let hand = vals(get_hand(s.to_string()));
+    let hand = vals(get_hand(s));
     const SCALE : usize = 16*16*16*16*16*16;
     eval_hand(&hand)*SCALE
 }
 
-fn power(s:String,org:String,card_value:fn(char)->usize)->usize
+fn power(s:&str,org:&str,card_value:fn(char)->usize)->usize
 {
-    let power = get_power(s.to_string());
+    let power = get_power(s);
     let spare = org.chars()
                    .fold(0, |s,c| s*16 + card_value(c)); 
     power + spare
@@ -57,25 +57,23 @@ fn power(s:String,org:String,card_value:fn(char)->usize)->usize
 
 fn row1(s:String)->(usize,usize)
 {
-    let tab : Vec<&str> = s.split(' ')
-                           .collect();                                        
-    (power(tab[0].to_string(),tab[0].to_string(),card1) , tab[1].parse::<usize>().unwrap() )
+    let tab : Vec<&str> = s.split(' ').collect();                                        
+    (power(tab[0],tab[0],card1) , tab[1].parse::<usize>().unwrap() )
 }
 
 fn row2(s:String)->(usize,usize)
 {
-    let tab : Vec<&str> = s.split(' ')
-                           .collect();                                        
-    ( row22(tab[0].to_string()) , tab[1].parse::<usize>().unwrap() )
+    let tab : Vec<&str> = s.split(' ').collect();
+    ( row_fuzzy(tab[0]) , tab[1].parse::<usize>().unwrap() )
 }
 
-fn row22(s:String)->usize
+fn row_fuzzy(s:&str)->usize
 {
     "23456789TJQKA".chars()
                    .map(|to| 
                         {
                             let s_new = s.replace('J', to.to_string().as_str());
-                            power(s_new,s.clone(),card2)
+                            power(s_new.as_str(),s,card2)
                         }
                    )
                    .max()
