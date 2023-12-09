@@ -44,7 +44,7 @@ fn loop_till_z(cmd:&String,id:usize,h:&HashMap<String,(String,String)>,start:&St
         if last(node.as_str())=='Z' {return (count,node.to_string());}
     }
 
-    (count,node.to_string())
+    //(count,node.to_string())
 }
 
 pub fn part1(data:&[String])->usize
@@ -111,26 +111,24 @@ pub fn part2(data:&[String])->usize
             {
                 let key = (node.0%size,node.1.to_string());
                 
-                if cache.get(&key).is_none()
+                let res = if cache.get(&key).is_none()
                 {
-                    let res = loop_till_z(&cmd,st[i].0,&h,&st[i].1);
-                    println!("res: {:?}",res.clone());
-                    cache.insert(key,res.clone());
-                    st[i].0 += res.0;
-                    st[i].1  = res.1;
+                    let res2 = loop_till_z(&cmd,st[i].0,&h,&st[i].1);
+                    println!("res: {:?}",res2.clone());
+                    cache.insert(key,res2.clone());
+                    res2.clone()
                 }
-                else
+                  else
                 {
-                    let res = cache.get(&key).unwrap();
-                    st[i].0 += res.0;
-                    st[i].1  = res.1.to_string();
-//                    st[i].2+=1;   
-                }
+                     cache.get(&key)
+                                                   .unwrap().clone()
+                    
+                };
+            
+                st[i].0 += res.0;
+                st[i].1  = res.1.to_string();
             }
         }
-        //let gg = gdc(14363,gdc(15989,gdc(16531,gdc(19241, gdc(19783,gdc(21409))))));
-        //let ss = (14363*15989*16531*19241*19783*21409)/gdc;
-
 
         min_v = st.iter().min_by_key(|a|a.0).unwrap().0;
         
