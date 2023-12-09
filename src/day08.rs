@@ -1,14 +1,21 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
-fn calc(s:&[String])->HashMap<String,(String,String)>
+//Elapsed: 1019.6   secs (po popsuciu bo wcześniej było 800)
+//Elapsed:  824.7   secs (po zmianie na FxHashMap)
+//Elapsed:  933.6   secs (po dodaniu BinaryHeap)
+//Elapsed:  576.8   secs (po wywaleniu clone i to_string)
+//Elapsed:  111.3   secs (po zamianie String na i32)
+//Elapsed:    0.018 secs (po GCD, zakładając pojedyncze cykle)
+
+fn calc(s:&[String])->FxHashMap<String,(String,String)>
 {
-    let mut map = HashMap::new();
+    let mut map = FxHashMap::default();
 
     for line in s
     {
         let tab : Vec<&str> = line.split(" = (").collect();
         let lr2 : Vec<&str> = tab[1].split(", ").collect();
-        let lr : Vec<&str> = lr2[1].split(")").collect();
+        let lr : Vec<&str> = lr2[1].split(')').collect();
 
         let id = tab[0].to_string();
         let l = lr2[0].to_string();
@@ -19,48 +26,49 @@ fn calc(s:&[String])->HashMap<String,(String,String)>
     map
 }
 
-fn loop_till_z(cmd:&String,id:usize,h:&HashMap<String,(String,String)>,start:&String)->(usize,String)
+fn loop_till_z(cmd:&String,id:usize,h:&FxHashMap<String,(String,String)>,start:&String)->(usize,String)
 {
     let mut id = id;
     let mut node = start;
     let mut count=0;
 
-    //while last(node.as_str())!='Z'
     loop
     {
-        //println!("node: {}",node);
         let (l,r) = h.get(node).unwrap();
-        if cmd.chars().nth(id%cmd.len()).unwrap()=='R'
-        {
-            node = r;
-        }
-          else 
-        {
-            node = l;
-        }
+        if cmd.chars().nth(id%cmd.len()).unwrap()=='R' { node = r; }
+                                                  else { node = l; }
         count+=1;
-        
         id+=1;    
-        if last(node.as_str())=='Z' {return (count,node.to_string());}
+        if node.ends_with('Z') {return (count,node.to_string());}
     }
+}
 
-    //(count,node.to_string())
+fn loop_till_z_id(cmd:&String,id:usize,h:&FxHashMap<i32,(i32,i32)>,start:i32)->(usize,i32)
+{
+    let mut id = id;
+    let mut node = start;
+    let mut count = 0;
+
+    loop
+    {
+        let (l,r) = h.get(&node).unwrap();
+        if cmd.chars().nth(id%cmd.len()).unwrap()=='R' { node = *r; }
+                                                  else { node = *l; }
+        count+=1;
+        id+=1;    
+        if node&1==1 {return (count,node);}
+    }
 }
 
 pub fn part1(data:&[String])->usize
 {
     let cmd = data[0].to_string();
-    let h = calc(&data[2..]);
+    let hash = calc(&data[2..]);
 
-    loop_till_z(&cmd,0,&h,&"AAA".to_string()).0
+    loop_till_z(&cmd,0,&hash,&"AAA".to_string()).0
 }
 
-fn last(s:&str)->char
-{
-    s.chars().last().unwrap()
-}
-
-fn gdc(a:i128,b:i128) -> i128
+fn gcd(a:usize,b:usize)->usize
 {
     let mut aa = a;
     let mut bb = b;
@@ -77,66 +85,95 @@ pub fn part2(data:&[String])->usize
 {
     let cmd = data[0].to_string();
     let h = calc(&data[2..]);
-
     
     let  num = h.iter()
-                      .filter(|(k,_)| last(k)=='A')
-                      .map(|(k,_)| (0usize,k.clone()))                      
-                      .collect::<Vec<_>>();
+                .filter(|(k,_)| k.ends_with('A') )
+                .map(|(k,_)| (0usize,k.clone()))                      
+                .collect::<Vec<_>>();
+
+    let  st = num.iter()
+                 .map(|(c,s)| loop_till_z(&cmd,*c,&h,s) )
+                 .collect::<Vec<(usize,String)>>();
+
+    let mut cache = FxHashMap::default();
+    
+    for node in st.iter()
+    {
+        let key = (node.0%cmd.len(),node.1.to_string());
+        cache.insert(key,loop_till_z(&cmd,node.0,&h,&node.1));
+    }
+
+
+    cache.values()
+         .fold(1, |shift,v| (shift*v.0)/gcd(shift,v.0) )
+}
+
+fn get_code(s:&str)->i32
+{
+    let mut code = 0;
+    for c in s.chars()
+    {
+        code = code*26 + (c as i32 - 'A' as i32);
+    }
+    code<<=1;
+    if s.ends_with('Z') { code|=1; }
+    code
+}
+
+#[allow(unused)]
+pub fn part2_slow(data:&[String])->usize
+{
+    let cmd = data[0].to_string();
+    let h_str = calc(&data[2..]);
+
+    let h = h_str.iter()
+                 .map(|(k,(l,r))| (get_code(k.as_str()),(get_code(l.as_str()),get_code(r.as_str()))))
+                 .collect::<FxHashMap<_,_>>();
+
+    let  num = h_str.iter()
+                    .filter(|(k,_)| k.ends_with('A') )
+                    .map(|(k,_)| (0usize,get_code(k)))                      
+                    .collect::<Vec<_>>();
 
     let mut st = num.iter()
-                .map(|(c,s)| 
-                {
-                    loop_till_z(&cmd,*c,&h,&s)
-                }
-                )
-                .collect::<Vec<(usize,String)>>();
+                .map(|(c,s)| loop_till_z_id(&cmd,*c,&h,*s) )
+                .collect::<Vec<(usize,i32)>>();
 
     let mut min_v = st.iter()
-                             .map(|(a,_)|*a)
-                             .min()
-                             .unwrap();
-    
+                      .map(|(a,_b)|*a)
+                      .min()
+                      .unwrap();
 
-    let mut cache = HashMap::new();
+    let mut cache = FxHashMap::default();
     let size = cmd.len();
 
-    while !st.iter()
-    .all(|(s1,_)| s1==&min_v)
+    while !st.iter().all(|(s1,_)| s1==&min_v)
     {
-        for i in 0..st.len()
+        for node in &mut st
         {
-            let node = &st[i];
-            if st[i].0==min_v
+            if node.0==min_v
             {
-                let key = (node.0%size,node.1.to_string());
+                let key = (node.0%size,node.1);
                 
-                let res = if cache.get(&key).is_none()
+                if cache.get(&key).is_none()
                 {
-                    let res2 = loop_till_z(&cmd,st[i].0,&h,&st[i].1);
-                    println!("res: {:?}",res2.clone());
-                    cache.insert(key,res2.clone());
-                    res2.clone()
+                    let res = loop_till_z_id(&cmd,node.0,&h,node.1);
+                    node.0 += res.0;
+                    node.1  = res.1;
+
+                    cache.insert(key,res);
                 }
                   else
                 {
-                     cache.get(&key)
-                                                   .unwrap().clone()
-                    
-                };
-            
-                st[i].0 += res.0;
-                st[i].1  = res.1.to_string();
+                    let res = cache.get(&key).unwrap();                    
+                    node.0 += res.0;
+                    node.1  = res.1;
+                }
             }
         }
 
-        min_v = st.iter().min_by_key(|a|a.0).unwrap().0;
-        
-        //println!("min_v: {:?}",min_v);
-        
+        min_v = st.iter().min().unwrap().0;
     }
-     
-//part2:21165830176709 OK
 
     min_v
 }
