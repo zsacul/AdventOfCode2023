@@ -1,31 +1,18 @@
 fn count(s:String,rev:bool)->i64
 {
-    let mut prev : Vec<i64> = s.split_whitespace()
-                               .map(|n| n.parse::<i64>().unwrap())
-                               .collect();
+    let mut tab : Vec<i64> = s.split_whitespace()
+                              .map(|n| n.parse::<i64>().unwrap())
+                              .collect();
+    if rev { tab.reverse(); }
+    let mut lastv = vec![*tab.last().unwrap()];
 
-    if rev { prev.reverse(); }
-    let mut lastv = vec![*prev.last().unwrap()];
-
-    loop 
+    while !tab.iter().all(|n| *n==0)
     {
-        let mut nextv = vec![];
-        for i in 0..prev.len()-1
-        {
-            nextv.push(prev[i+1] - prev[i]);
-        }
-
-        lastv.push(*nextv.last().unwrap());
-
-        if nextv.iter().all(|n| *n==0) { break; }
-
-        prev = nextv.clone();
+        tab = tab.windows(2).map(|s| s[1]-s[0]).collect();
+        lastv.push(*tab.last().unwrap());
     }
-
-    lastv.reverse();
-    lastv.iter()
-         .copied()
-         .sum()
+    
+    lastv.iter().copied().sum()
 }
 
 pub fn part1(data:&[String])->i64
