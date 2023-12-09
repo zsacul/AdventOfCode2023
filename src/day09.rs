@@ -1,44 +1,31 @@
 fn count(s:String,rev:bool)->i64
 {
-    let mut  org :Vec<i64> = s.split_whitespace()
-                    .map(|n| n.parse::<i64>().unwrap())
-                    .collect();
+    let mut prev : Vec<i64> = s.split_whitespace()
+                               .map(|n| n.parse::<i64>().unwrap())
+                               .collect();
 
-    if (rev) {org.reverse();}
+    if rev { prev.reverse(); }
+    let mut lastv = vec![*prev.last().unwrap()];
 
-
-    let mut lastv = vec![org[org.len()-1]];
-
-    let mut prev = org.clone();
-
-    loop {
+    loop 
+    {
         let mut nextv = vec![];
         for i in 0..prev.len()-1
         {
-            nextv.push( prev[i+1]-prev[i]);
+            nextv.push(prev[i+1] - prev[i]);
         }
 
-        lastv.push(nextv[nextv.len()-1]);
+        lastv.push(*nextv.last().unwrap());
 
-        if nextv.iter().all(|n| *n==0) 
-        { 
-            let res = org[org.len()-1] + prev[prev.len()-1];
-            println!("prev: {:?}",res);
-            break;
-        }
+        if nextv.iter().all(|n| *n==0) { break; }
 
         prev = nextv.clone();
     }
 
-    let mut acc = 0;
     lastv.reverse();
-    println!("lastv: {:?}",lastv);
-    for i in lastv
-    {
-        acc+=i;
-    }
-
-    acc
+    lastv.iter()
+         .copied()
+         .sum()
 }
 
 pub fn part1(data:&[String])->i64

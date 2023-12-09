@@ -93,7 +93,7 @@ pub fn part2(data:&[String])->usize
                 .collect::<Vec<(usize,String)>>();
 
     let mut min_v = st.iter()
-                             .map(|(a,b)|*a)
+                             .map(|(a,_)|*a)
                              .min()
                              .unwrap();
     
@@ -102,7 +102,7 @@ pub fn part2(data:&[String])->usize
     let size = cmd.len();
 
     while !st.iter()
-    .all(|(s1,s2)| s1==&min_v)
+    .all(|(s1,_)| s1==&min_v)
     {
         for i in 0..st.len()
         {
