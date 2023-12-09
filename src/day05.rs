@@ -1,9 +1,15 @@
-#[derive(Debug,Clone,Copy)]
+//part1:57075758
+//part2:31161857
+//Elapsed: 119.55601 secs (org)
+//Elapsed:  88.762   secs (sort by range start)
+//Elapsed:  82.23701 secs (min max ranges checked)
+
+#[derive(Debug,Clone,Copy,Ord,PartialOrd,Eq,PartialEq)]
 struct Range
 {
-    des : usize,
     src : usize,
     len : usize,    
+    des : usize,
 }
 
 impl Range {
@@ -25,21 +31,13 @@ impl Range {
 
 struct Value
 {
-    _name : String,
-    data : Vec<Range>
+    data         : Vec<Range>,
+    min_possible : usize,
+    max_possible : usize,
 }
 
 impl Value
 {
-    fn new(name:String,data:Vec<Range>)->Value
-    {
-        Value
-        {
-            _name:name,
-            data
-        }
-    }
-
     fn min_possible(&self)->usize
     {
         self.data.last().unwrap().des
@@ -47,32 +45,45 @@ impl Value
 
     fn parse(data:&[String])->Value
     {
-        let name = data[0].clone();
         let mut acc:Vec<Range> = Vec::new();
         
         for s in data[1..].iter()
         {
             acc.push(Range::new(s.clone()));
         }
-        Value::new(name,acc)
+        acc.sort();
+
+        let min_possible = acc.iter().map(|r| r.src        ).min().unwrap();
+        let max_possible = acc.iter().map(|r| r.src + r.len).max().unwrap();
+
+        Value { data:acc,min_possible,max_possible }
     }
 
-    fn map(&self,id:usize)->usize
+    fn map(&self,id:usize)->Option<usize>
     {
-        for r in self.data.iter()
-        {
-            if r.src<=id && id<r.src+r.len
+        if id>=self.min_possible && id<=self.max_possible
+        {         
+            for r in self.data.iter()
             {
-                return r.des + id-r.src;
+                if id>=r.src && id<r.src + r.len
+                {
+                    return Some(r.des + id-r.src);
+                }
+                
+                if id < r.src { return None; }
             }
+            None
         }
-        id
+          else 
+        {
+            None    
+        }        
     }
 
     #[allow(unused)]
     fn print(&self)
     {
-        println!("n:{:?}",self._name);
+        //println!("n:{:?}",self._name);
         println!("v:{:?}",self.data);
     }
     
@@ -83,7 +94,9 @@ fn compute(id:usize,values:&[Value])->usize
     let mut id=id;
     for v in values.iter()
     {
-        id = v.map(id);
+        let g = v.map(id);
+        if g.is_none() { return id; }
+        id = g.unwrap();
     }
 
     id
