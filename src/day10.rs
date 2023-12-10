@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::VecDeque;
 use super::vec2::Vec2;
 
 struct Forest 
@@ -136,15 +137,6 @@ impl Forest
         self.pos_ok(p.x as i32,p.y as i32)
     }
 
-    fn get_val(&self,x:i32,y:i32)->char
-    {
-        if self.pos_ok(x,y) 
-        {
-            return self.field[y as usize][x as usize];
-        }
-        '*'
-    }
-
     fn find_pos(&self,s:char)->Vec2
     {
         for y in 0..self.dy
@@ -227,60 +219,6 @@ impl Forest
 //        println!("{:?}",self.field);
     }
 
-
-    fn mark_inside(&mut self)
-    {
-        let mut pen = false;
-        for y in 0..self.dy
-        {
-            pen = false;
-            for x in 0..self.dx
-            {
-                let v = self.visited.get(&Vec2::new(x as i64,y as i64));
-                if v.is_some()
-                {
-                    let c = *v.unwrap();
-
-                    let cc =  self.field[y][x];// = (('0' as i32) + ((c as i32) %10)) as u8 as char;
-
-//                    if "F7|LJS".contains(cc) && self.visited.get(&Vec2::new(x as i64,y as i64)).is_some()
-                    if "|S".contains(cc) && self.visited.get(&Vec2::new(x as i64,y as i64)).is_some()
-                    {
-                        pen = !pen;
-                    }
-                      else
-                    {
-
-                    }
-                    
-                }
-                  else
-                {
-                    let cc =  self.field[y][x];
-
-                    if cc=='.'
-                    {
-                        if pen
-                        {
-                            self.visited.insert(Vec2::new(x as i64,y as i64),123456789);
-                            self.field[y][x] = '&';
-                        }
-                          else
-                        {
-                            self.visited.insert(Vec2::new(x as i64,y as i64),123456780);
-                            self.field[y][x] = 'O';
-                        }
-                    }
-                }
-                
-            }
-            println!();
-        }
-//        println!("{:?}",self.field);
-    }
-
-
-
     fn connects(dx:i32,dy:i32,a:char,b:char)->bool
     {
         if a=='S' 
@@ -291,8 +229,6 @@ impl Forest
         let u = "7F|S";
         let l = "LF-S";
         let d = "JL|S";
-
-        //println!("a:{} b:{} dx:{} dy:{}",a,b,dx,dy);
 
         let res = 
         match a
@@ -394,14 +330,7 @@ impl Forest
 
     fn elem(&self,p:Vec2)->char
     {
-        if self.pos_ok_v(p) 
-        {
-            self.field[p.y as usize][p.x as usize]
-        } 
-        else
-        {
-            '.'
-        }
+        if self.pos_ok_v(p) { self.field[p.y as usize][p.x as usize] } else { '.' }
     }
 
     fn remove_s(&mut self,p:Vec2)
@@ -424,79 +353,43 @@ impl Forest
         
     }
 
-
     fn flood_o(&mut self,p:Vec2)
     {       
-        println!("flood_o:{:?}",p);
-        let mut stack = vec![(p,0)];
-        
+        let mut queue = VecDeque::new();
+        queue.push_back(p);
 
-        while !stack.is_empty()
+        while !queue.is_empty()
         {
-            //let (p,code) = stack.pop().unwrap();
-            //pop from the beggingin od stack
-            let (p,code) = stack.remove(0);
+            let p = queue.remove(0).unwrap();
 
-            if !self.pos_ok_v(p) || self.field[p.y as usize][p.x as usize]!='.'
+            if self.pos_ok_v(p) && self.field[p.y as usize][p.x as usize]=='.'
             {
-                //if !self.pos_ok_v(p)
-                //{
-                  //  println!("not ok:{:?}",p);
-                //}
-            }
-              else
-            {
-                //println!("p:{:?} code:{}",p,code);
                 self.field[p.y as usize][p.x as usize] = 'O';
                 
 
                 for b in p.around8()
                 {
-                    //println!("m:{}",p.around4().len());
-                    
-                   // println!("try move:{:?}",b);
-                    
-                    
-                        //println!("moveOK");
-                        stack.push((b,code+1));
-                    
+                    queue.push_back(b);
                 }
-    
-                //stack.push((Vec2::new(p.x+1,p.y  ,p.z  ), 1<<0));
-                //stack.push((Vec2::new(p.x-1,p.y  ,p.z  ), 1<<1));
-                //stack.push((Vec2::new(p.x  ,p.y+1,p.z  ), 1<<2));
-                //stack.push((Vec2::new(p.x  ,p.y-1,p.z  ), 1<<3));
             }         
         }
-        
-
     }
 }
 
-
-//13514
 pub fn part1(data:&[String])->usize
 {
     let mut f = Forest::new(data);
-
     f.print();
-    
-    let p:Vec2 = f.find_pos('S');
-    
-    println!("p:{:?}",p);
-    
-    f.flood(p,0);
+    f.flood(f.find_pos('S'),0);
 
-    
+    let nn = f.visited
+                          .values()
+                          .collect::<Vec<&usize>>()
+                          .iter()
+                          .map(|v|**v).collect::<Vec<usize>>();
 
-    let mut nn = f.visited.values().collect::<Vec<&usize>>().iter().map(|v|**v).collect::<Vec<usize>>();
     let id = nn.iter().max().unwrap_or(&0).clone();
-    //println!("id:{}",id);
     id-1
-    
- 
-
-    //.count_visible()    
 }
 
 pub fn part2(data:&[String])->usize
@@ -511,12 +404,12 @@ pub fn part2(data:&[String])->usize
     
     f.flood(p,0);
     f.copy();
-    f.print();
+    //f.print();
     f.remove_s(p);
 
     let mut nf = Forest::grow(&f);
     nf.flood_o(Vec2::new(0 as i64,0 as i64));
-    nf.print();
+    //nf.print();
     nf.count('.')
 }
 
