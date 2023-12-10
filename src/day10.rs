@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use std::collections::VecDeque;
+use std::collections::{HashMap,VecDeque};
 use super::vec2::Vec2;
 
 struct Pipes 
@@ -20,7 +19,7 @@ impl Pipes
     fn new(data:&[String])->Self
     {
         let dx = data[0].len()+2;
-        let dy = data.len()+2;
+        let dy = data.len()   +2;
 
         let mut res = Self 
         {
@@ -56,17 +55,11 @@ impl Pipes
     {
         let mut res = 0;
 
-        for y in 0..self.dy/3 as usize
+        for y in (1..self.dy).step_by(3)
         {
-            for x in 0..self.dx/3 as usize
+            for x in (1..self.dx).step_by(3)
             {                
-                let x3 = x*3+1;
-                let y3 = y*3+1;
-
-                if self.field[y3][x3]==f
-                {
-                    res+=1;
-                }
+                if self.field[y][x]==f { res+=1; }
             }
         }
         res
@@ -85,9 +78,9 @@ impl Pipes
             visited : HashMap::new(),
         };
 
-        for y in 0..f.dy as usize
+        for y in 0..f.dy
         {
-            for x in 0..f.dx as usize
+            for x in 0..f.dx
             {
                 let c = f.field[y][x];
                 let x3 = x*3+1;
@@ -127,14 +120,9 @@ impl Pipes
         res
     }
 
-    fn pos_ok(&self,x:i32,y:i32)->bool
-    {
-        x>=0 && y>=0 && x<self.dx as i32 && y<self.dy as i32
-    }
-
     fn pos_ok_v(&self,p:Vec2)->bool
     {
-        self.pos_ok(p.x as i32,p.y as i32)
+        p.x>=0 && p.y>=0 && p.x<self.dx as i64 && p.y<self.dy as i64     
     }
 
     fn find_pos(&self,s:char)->Vec2
@@ -152,7 +140,6 @@ impl Pipes
         panic!("not found");
     }
 
-
     #[allow(unused)]
     fn print(&self)
     {
@@ -160,13 +147,11 @@ impl Pipes
         {
             for x in 0..self.dx
             {
-                let c = Self::convert(self.field[y][x] as char);
+                let c = Self::convert(self.field[y][x]);
                 print!("{}",c )
             }
-
             println!();
         }
-
     }
 
     #[allow(unused)]
@@ -179,16 +164,7 @@ impl Pipes
                 let v = self.visited.get(&Vec2::new(x as i64,y as i64));
                 if v.is_some()
                 {
-                    let c = *v.unwrap();
-
-                    if c>9
-                    {
-                        print!("{}",(('0' as i32) + ((c as i32) %10)) as u8 as char);
-                    }
-                      else
-                    {
-                        print!("{}",c);
-                    }
+                    print!("{}",(('0' as i32) + ((*v.unwrap() as i32) %10)) as u8 as char);
                 }
                   else
                 {
@@ -205,7 +181,6 @@ impl Pipes
         if a=='S' { return Self::connects(-dx,-dy,b,a); }
         if b=='S' { return true;                             }
 
-        let res = 
         match a
         {
             '└' => (dx== 1 && dy== 0 && Self::R_DIR.contains(b)) ||
@@ -221,89 +196,56 @@ impl Pipes
             '|' => (dx== 0 && dy== 1 && Self::D_DIR.contains(b)) ||
                    (dx== 0 && dy==-1 && Self::U_DIR.contains(b)) ,
              _  => false,
-        };
-        
-        res        
+        }     
     }
 
     fn move_okb(&self,a:Vec2,b:Vec2)->bool
     {
-        if self.pos_ok(a.x as i32,a.y as i32) && self.pos_ok(b.x as i32,b.y as i32)
+        if self.pos_ok_v(a) && self.pos_ok_v(b)
         {
             let dx = (b.x - a.x) as i32;
             let dy = (b.y - a.y) as i32;
             if !((dx.abs()==1 && dy==0) || (dx==0 && dy.abs()==1)) { return false; }
-            if Self::connects(dx,dy,self.field[a.y as usize][a.x as usize] as char,self.field[b.y as usize][b.x as usize] as char)
+            if Self::connects(dx,dy,self.field[a.y as usize][a.x as usize],
+                                    self.field[b.y as usize][b.x as usize])
             {
                 return true
             }
         }
         false
     }
-/*
+
     fn flood(&mut self,p:Vec2,len:usize)
     {       
-        let mut stack = vec![(p,len)];
+        let mut queue = VecDeque::new();
+        queue.push_back((p,len));
 
-        while !stack.is_empty()
+        while !queue.is_empty()
         {
-            let (p,code) = stack.remove(0);
+            let (p,code) = queue.pop_front().unwrap();
 
             if self.pos_ok_v(p) && self.visited.get(&p).is_none()
             {
-                self.visited.insert(p,code+1);
+                self.visited.insert(p,code);
 
                 for b in p.around4()
                 {
                     if self.move_okb(p,b)
                     {
-                        stack.push((b,code+1));
+                        queue.push_back((b,code+1));
                     }
                 }
             }         
         }
     }
-*/
-fn flood(&mut self,p:Vec2,len:usize)->u16
-{       
-    let mut stack = vec![(p,len)];
-    let res = 0;
 
-    while !stack.is_empty()
-    {
-        //let (p,code) = stack.pop().unwrap();
-        //pop from the beggingin od stack
-        let (p,code) = stack.remove(0);
-
-        if !self.pos_ok_v(p) || self.visited.get(&p).is_some()
-        {
-        }
-          else
-        {
-            //println!("p:{:?} code:{}",p,code);
-            self.visited.insert(p,code+1);
-
-            for b in p.around4()
-            {
-                if self.move_okb(p,b)
-                {
-
-                    stack.push((b,code+1));
-                }
-            }
-        }         
-    }
-    res
-
-}
     fn copy(&mut self)
     {
         for y in 0..self.dy
         {
             for x in 0..self.dx
             {
-                let v = self.visited.get(&Vec2::new(x as i64,y as i64));
-                if v.is_none()
+                if self.visited.get(&Vec2::new(x as i64,y as i64)).is_none()
                 {
                     self.field[y][x] = '.';
                 }
@@ -321,17 +263,12 @@ fn flood(&mut self,p:Vec2,len:usize)->u16
         let right = Self::R_DIR.contains(self.elem(p.r()));
         let down =  Self::D_DIR.contains(self.elem(p.b()));
 
-        println!("{} {} {} {}",p.x,p.y,right,down);
-
         let c = 
         if down
         {            
-            if right {'┌'} else {'┐'}
+             if right {'┌'} else {'┐'}
         }
-        else
-        {
-            if right {'└'} else {'┘'}
-        };
+        else if right {'└'} else {'┘'};
 
         self.field[p.y as usize][p.x as usize] = c;      
     }
@@ -348,9 +285,8 @@ fn flood(&mut self,p:Vec2,len:usize)->u16
             if self.pos_ok_v(p) && self.field[p.y as usize][p.x as usize]=='.'
             {
                 self.field[p.y as usize][p.x as usize] = 'O';
-                
 
-                for b in p.around8()
+                for b in p.around4()
                 {
                     queue.push_back(b);
                 }
@@ -367,9 +303,10 @@ pub fn part1(data:&[String])->usize
     f.replace_s(pos_s);
     f.flood(pos_s,0);
 
-    f.visited
-     .values()
-     .max().unwrap()-1
+    *f.visited
+      .values()
+      .max()
+      .unwrap() 
 }
 
 pub fn part2(data:&[String])->usize
@@ -382,9 +319,7 @@ pub fn part2(data:&[String])->usize
     f.replace_s(pos_s);
 
     let mut nf = Pipes::grow(&f);
-    nf.flood_o(Vec2::new(0 as i64,0 as i64));    
-
-    nf.print();
+    nf.flood_o(Vec2::new(0,0));    
     nf.count('.')
 }
 
@@ -395,7 +330,6 @@ pub fn solve(data:&[String])
     println!("part1:{}",part1(data));
     println!("part2:{}",part2(data));
 }
-
 
 #[test]
 fn test1()
@@ -476,4 +410,3 @@ fn test5()
     ];
     assert_eq!(part2(&v),10);
 }
-
