@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::collections::VecDeque;
 use super::vec2::Vec2;
 
-struct Forest 
+struct Pipes 
 {
     dx      : usize,
     dy      : usize,
@@ -10,8 +10,13 @@ struct Forest
     visited : HashMap<Vec2,usize>,
 }
 
-impl Forest 
+impl Pipes 
 {
+    const R_DIR : &str = "┘┐-";
+    const U_DIR : &str = "┌┐|";
+    const D_DIR : &str = "└┘|";
+    const L_DIR : &str = "┌└-";
+
     fn new(data:&[String])->Self
     {
         let dx = data[0].len()+2;
@@ -29,16 +34,26 @@ impl Forest
         {
             for x in 0..dx-2
             {
-                res.field[y_pos+1][x+1] = y.chars().nth(x).unwrap_or('.');
+                res.field[y_pos+1][x+1] = Pipes::convert(y.chars().nth(x).unwrap_or('.'));
             }                
         }
         res
     }
 
+    fn convert(c:char)->char
+    {
+        match c
+        {
+            'L' => '└',
+            'J' => '┘',
+            '7' => '┐',
+            'F' => '┌',
+            _   => c,
+        }
+    }    
+
     fn count(&mut self,f:char)->usize
     {
-        let dx3 = 3*self.dx;
-        let dy3 = 3*self.dy;
         let mut res = 0;
 
         for y in 0..self.dy/3 as usize
@@ -51,14 +66,13 @@ impl Forest
                 if self.field[y3][x3]==f
                 {
                     res+=1;
-                    self.field[y3][x3]='*';
                 }
             }
         }
         res
     }
 
-    fn grow(f:&Forest)->Self
+    fn grow(f:&Pipes)->Self
     {
         let dx3 = 3*f.dx;
         let dy3 = 3*f.dy;
@@ -89,19 +103,19 @@ impl Forest
                         res.field[y3-1][x3  ] = '|';
                         res.field[y3+1][x3  ] = '|';
                     },
-                    'F' => {
+                    '┌' => {
                         res.field[y3  ][x3+1] = '-';
                         res.field[y3+1][x3  ] = '|';
                     },
-                    '7' => {
+                    '┐' => {
                         res.field[y3  ][x3-1] = '-';
                         res.field[y3+1][x3  ] = '|';
                     },
-                    'J' => {
+                    '┘' => {
                         res.field[y3  ][x3-1] = '-';
                         res.field[y3-1][x3  ] = '|';
                     },
-                    'L' => {
+                    '└' => {
                         res.field[y3  ][x3+1] = '-';
                         res.field[y3-1][x3  ] = '|';
                     },
@@ -111,20 +125,6 @@ impl Forest
         }
 
         res
-    }
-
-
-    fn convert(c:char)->char
-    {
-        match c
-        {
-            'L' => '└',
-            'J' => '┘',
-            '7' => '┐',
-            'F' => '┌',
-            _   => c,
-        }
-        //¬┘┐└┌
     }
 
     fn pos_ok(&self,x:i32,y:i32)->bool
@@ -156,20 +156,12 @@ impl Forest
     #[allow(unused)]
     fn print(&self)
     {
-        //println!("{:?}",self.field);
         for y in 0..self.dy
         {
             for x in 0..self.dx
             {
-                //if self.field[y][x]=='.'
-                //{
-                  //  print!("*");
-                //}
-                //else
-                {
-                    let c = Self::convert(self.field[y][x] as char);
-                    print!("{}",c )
-                }
+                let c = Self::convert(self.field[y][x] as char);
+                print!("{}",c )
             }
 
             println!();
@@ -189,16 +181,6 @@ impl Forest
                 {
                     let c = *v.unwrap();
 
-                    if c==123456780
-                    {
-                        print!(" ");
-                    }
-                    else
-                    if c==123456789
-                    {
-                        print!("*");
-                    }
-                    else
                     if c>9
                     {
                         print!("{}",(('0' as i32) + ((c as i32) %10)) as u8 as char);
@@ -207,7 +189,6 @@ impl Forest
                     {
                         print!("{}",c);
                     }
-                    
                 }
                   else
                 {
@@ -216,35 +197,29 @@ impl Forest
             }
             println!();
         }
-//        println!("{:?}",self.field);
+
     }
 
     fn connects(dx:i32,dy:i32,a:char,b:char)->bool
     {
-        if a=='S' 
-        {
-            return Self::connects(-dx,-dy,b,a);
-        }
-        let r = "J7-S";
-        let u = "7F|S";
-        let l = "LF-S";
-        let d = "JL|S";
+        if a=='S' { return Self::connects(-dx,-dy,b,a); }
+        if b=='S' { return true;                             }
 
         let res = 
         match a
         {
-            'L' => (dx== 1 && dy== 0 && r.contains(b)) ||
-                   (dx== 0 && dy==-1 && u.contains(b)) ,
-            'J' => (dx==-1 && dy== 0 && l.contains(b)) ||
-                   (dx== 0 && dy==-1 && u.contains(b)) ,
-            '7' => (dx==-1 && dy== 0 && l.contains(b)) ||
-                   (dx== 0 && dy== 1 && d.contains(b)) ,
-            'F' => (dx== 1 && dy== 0 && r.contains(b)) ||
-                   (dx== 0 && dy== 1 && d.contains(b)) ,
-            '-' => (dx== 1 && dy== 0 && r.contains(b)) ||
-                   (dx==-1 && dy== 0 && l.contains(b)) ,
-            '|' => (dx== 0 && dy== 1 && d.contains(b)) ||
-                   (dx== 0 && dy==-1 && u.contains(b)) ,
+            '└' => (dx== 1 && dy== 0 && Self::R_DIR.contains(b)) ||
+                   (dx== 0 && dy==-1 && Self::U_DIR.contains(b)) ,
+            '┘' => (dx==-1 && dy== 0 && Self::L_DIR.contains(b)) ||
+                   (dx== 0 && dy==-1 && Self::U_DIR.contains(b)) ,
+            '┐' => (dx==-1 && dy== 0 && Self::L_DIR.contains(b)) ||
+                   (dx== 0 && dy== 1 && Self::D_DIR.contains(b)) ,
+            '┌' => (dx== 1 && dy== 0 && Self::R_DIR.contains(b)) ||
+                   (dx== 0 && dy== 1 && Self::D_DIR.contains(b)) ,
+            '-' => (dx== 1 && dy== 0 && Self::R_DIR.contains(b)) ||
+                   (dx==-1 && dy== 0 && Self::L_DIR.contains(b)) ,
+            '|' => (dx== 0 && dy== 1 && Self::D_DIR.contains(b)) ||
+                   (dx== 0 && dy==-1 && Self::U_DIR.contains(b)) ,
              _  => false,
         };
         
@@ -267,49 +242,27 @@ impl Forest
         false
     }
 
-    fn flood(&mut self,p:Vec2,len:usize)->u16
+    fn flood(&mut self,p:Vec2,len:usize)
     {       
         let mut stack = vec![(p,len)];
-        let mut res = 0;
 
         while !stack.is_empty()
         {
-            //let (p,code) = stack.pop().unwrap();
-            //pop from the beggingin od stack
             let (p,code) = stack.remove(0);
 
-            if !self.pos_ok_v(p) || self.visited.get(&p).is_some()
+            if self.pos_ok_v(p) && self.visited.get(&p).is_none()
             {
-                if !self.pos_ok_v(p)
-                {
-                  //  println!("not ok:{:?}",p);
-                }
-            }
-              else
-            {
-                //println!("p:{:?} code:{}",p,code);
                 self.visited.insert(p,code+1);
 
                 for b in p.around4()
                 {
-                    //println!("m:{}",p.around4().len());
-                    
-                    //println!("try move:{:?}",b);
                     if self.move_okb(p,b)
                     {
-                        //println!("moveOK");
                         stack.push((b,code+1));
                     }
                 }
-    
-                //stack.push((Vec2::new(p.x+1,p.y  ,p.z  ), 1<<0));
-                //stack.push((Vec2::new(p.x-1,p.y  ,p.z  ), 1<<1));
-                //stack.push((Vec2::new(p.x  ,p.y+1,p.z  ), 1<<2));
-                //stack.push((Vec2::new(p.x  ,p.y-1,p.z  ), 1<<3));
             }         
         }
-        res
-
     }
 
     fn copy(&mut self)
@@ -322,7 +275,6 @@ impl Forest
                 if v.is_none()
                 {
                     self.field[y][x] = '.';
-                    
                 }
             }
         }
@@ -333,24 +285,24 @@ impl Forest
         if self.pos_ok_v(p) { self.field[p.y as usize][p.x as usize] } else { '.' }
     }
 
-    fn remove_s(&mut self,p:Vec2)
+    fn replace_s(&mut self,p:Vec2)
     {
-        let right = "-7J".contains(self.elem(p.r()));
-        let down =  "|LJ".contains(self.elem(p.r()));
+        let right = Self::R_DIR.contains(self.elem(p.r()));
+        let down =  Self::D_DIR.contains(self.elem(p.b()));
+
+        println!("{} {} {} {}",p.x,p.y,right,down);
 
         let c = 
         if down
-        {
-            if right {'L'} else {'J'}
+        {            
+            if right {'┌'} else {'┐'}
         }
-          else
+        else
         {
-            if right {'F'} else {'7'}
+            if right {'└'} else {'┘'}
         };
 
-        self.field[p.y as usize][p.x as usize] = c;
-
-        
+        self.field[p.y as usize][p.x as usize] = c;      
     }
 
     fn flood_o(&mut self,p:Vec2)
@@ -378,7 +330,7 @@ impl Forest
 
 pub fn part1(data:&[String])->usize
 {
-    let mut f = Forest::new(data);
+    let mut f = Pipes::new(data);
     f.print();
     f.flood(f.find_pos('S'),0);
 
@@ -394,22 +346,17 @@ pub fn part1(data:&[String])->usize
 
 pub fn part2(data:&[String])->usize
 {
-    let mut f = Forest::new(data);
-
-    f.print();
+    let mut f = Pipes::new(data);
+    let pos_s:Vec2 = f.find_pos('S');
     
-    let p:Vec2 = f.find_pos('S');
-    
-    println!("p:{:?}",p);
-    
-    f.flood(p,0);
+    f.flood(pos_s,0);
     f.copy();
-    //f.print();
-    f.remove_s(p);
+    f.replace_s(pos_s);
 
-    let mut nf = Forest::grow(&f);
-    nf.flood_o(Vec2::new(0 as i64,0 as i64));
-    //nf.print();
+    //f.print();
+
+    let mut nf = Pipes::grow(&f);
+    nf.flood_o(Vec2::new(0 as i64,0 as i64));    
     nf.count('.')
 }
 
