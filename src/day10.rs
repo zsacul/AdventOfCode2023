@@ -14,8 +14,8 @@ impl Pipes
 {
     const R_DIR : &str = "┘┐-";
     const U_DIR : &str = "┌┐|";
+    const L_DIR : &str = "└┌-";
     const D_DIR : &str = "└┘|";
-    const L_DIR : &str = "┌└-";
 
     fn new(data:&[String])->Self
     {
@@ -223,7 +223,6 @@ impl Pipes
              _  => false,
         };
         
-        
         res        
     }
 
@@ -241,7 +240,7 @@ impl Pipes
         }
         false
     }
-
+/*
     fn flood(&mut self,p:Vec2,len:usize)
     {       
         let mut stack = vec![(p,len)];
@@ -264,7 +263,39 @@ impl Pipes
             }         
         }
     }
+*/
+fn flood(&mut self,p:Vec2,len:usize)->u16
+{       
+    let mut stack = vec![(p,len)];
+    let res = 0;
 
+    while !stack.is_empty()
+    {
+        //let (p,code) = stack.pop().unwrap();
+        //pop from the beggingin od stack
+        let (p,code) = stack.remove(0);
+
+        if !self.pos_ok_v(p) || self.visited.get(&p).is_some()
+        {
+        }
+          else
+        {
+            //println!("p:{:?} code:{}",p,code);
+            self.visited.insert(p,code+1);
+
+            for b in p.around4()
+            {
+                if self.move_okb(p,b)
+                {
+
+                    stack.push((b,code+1));
+                }
+            }
+        }         
+    }
+    res
+
+}
     fn copy(&mut self)
     {
         for y in 0..self.dy
@@ -331,17 +362,14 @@ impl Pipes
 pub fn part1(data:&[String])->usize
 {
     let mut f = Pipes::new(data);
-    f.print();
-    f.flood(f.find_pos('S'),0);
+    
+    let pos_s = f.find_pos('S');
+    f.replace_s(pos_s);
+    f.flood(pos_s,0);
 
-    let nn = f.visited
-                          .values()
-                          .collect::<Vec<&usize>>()
-                          .iter()
-                          .map(|v|**v).collect::<Vec<usize>>();
-
-    let id = nn.iter().max().unwrap_or(&0).clone();
-    id-1
+    f.visited
+     .values()
+     .max().unwrap()-1
 }
 
 pub fn part2(data:&[String])->usize
@@ -353,10 +381,10 @@ pub fn part2(data:&[String])->usize
     f.copy();
     f.replace_s(pos_s);
 
-    //f.print();
-
     let mut nf = Pipes::grow(&f);
     nf.flood_o(Vec2::new(0 as i64,0 as i64));    
+
+    nf.print();
     nf.count('.')
 }
 
@@ -367,6 +395,7 @@ pub fn solve(data:&[String])
     println!("part1:{}",part1(data));
     println!("part2:{}",part2(data));
 }
+
 
 #[test]
 fn test1()
