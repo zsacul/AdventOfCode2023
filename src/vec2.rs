@@ -75,6 +75,31 @@ impl Vec2 {
     }
 
     #[allow(unused)]
+    pub fn r(&self)->Vec2
+    {
+        Vec2::new(self.x+1,self.y  )
+    }
+
+    #[allow(unused)]
+    pub fn l(&self)->Vec2
+    {
+        Vec2::new(self.x-1,self.y  )
+    }
+
+    #[allow(unused)]
+    pub fn u(&self)->Vec2
+    {
+        Vec2::new(self.x  ,self.y-1)
+    }
+
+    #[allow(unused)]
+    pub fn b(&self)->Vec2
+    {
+        Vec2::new(self.x  ,self.y+1)
+    }
+
+
+    #[allow(unused)]
     pub fn distance2(&self,p:&Vec2)->i64
     {
         (self.x-p.x).abs() +
