@@ -138,14 +138,38 @@ pub fn part1(data:&[String])->usize
 
 fn multiply(l:&String)->String
 {
-    
+    let tt = l.split(' ').collect::<Vec<_>>();
+    let mut res = vec![];
+    res.push(tt[0]);
+    res.push(tt[0]);
+    res.push(tt[0]);
+    res.push(tt[0]);
+    res.push(tt[0]);
+
+    let mut res2 = vec![];
+    res2.push(tt[1]);
+    res2.push(tt[1]);
+    res2.push(tt[1]);
+    res2.push(tt[1]);
+    res2.push(tt[1]);
+
+    [res.join("?") , res2.join(",")].join(" ")
 }
 
 pub fn part2(data:&[String])->usize
 {
-    data.iter()
-        .map(|s| count(s.to_string()))
-        .sum()
+    let mut res = 0;
+
+    for s in data
+    {
+        let t = count(multiply(&s.to_string()));
+        println!("{} {}",s,t);
+        res+=t;
+    }
+    //data.iter()
+      //  .map(|s| count(multiply(&s.to_string())) )
+        //.sum()
+    res
 }
 
 #[allow(unused)]
