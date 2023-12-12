@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 fn print(st:&Vec<char>)
 {
     print!("stack=[");
@@ -92,8 +94,73 @@ fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i64>,last:char,c:char,id:usize,idlo:i64
     return res;
 }
 
+
+fn dfs2(h:&mut HashMap<(char,char,usize,i8,i8),usize>,t:&str,num:&Vec<i8>,last:char,c:char,id:usize,idlo:i8,lefto:i8)->usize
+{
+    let mut idl  = idlo;
+    let mut left = lefto;
+
+    let end = id==t.len()-1;
+    let key = (last,c,id,idlo,lefto);
+    if h.contains_key(&key)
+    {
+        return *h.get(&key).unwrap();
+    }
+
+    
+    if c=='?' 
+    { 
+        let a = dfs2(h,t,num,last,'#',id,idlo,lefto); 
+        let b = dfs2(h,t,num,last,'.',id,idlo,lefto);
+        return a+b;
+    }
+
+    if c=='#'
+    {
+        if last=='.' 
+        {
+            if left!=0
+            {
+                return 0;    
+            }
+            idl+=1;
+            left = *num.iter().nth(idl as usize).unwrap_or(&1) as i8;
+        }
+
+        if c=='#'
+        {
+            left-=1;
+        }
+
+        if left<0 
+        {
+            return 0;
+        }
+    }   
+ 
+    if end
+    {
+        if left==0 && idl==num.len() as i8 -1
+        {            
+            return 1;   
+        }
+          else 
+        {
+            return 0;    
+        }
+    }
+
+    let n = t.chars().nth(id+1).unwrap();
+    let res = dfs2(h,t,num,c,n,id+1,idl,left);
+    h.insert(key,res);
+    return res;
+}
+
+
 fn count(s:String)->usize
 {
+    return count2(s);
+
     let t :Vec<_>= s.split(' ').collect();
     let num : Vec<i64> = t[1].split(',').map(|s| s.parse::<i64>().unwrap()).collect();
     let txt = t[0].to_string();
@@ -127,7 +194,39 @@ fn count(s:String)->usize
    // dfs(&mut st,&txt,&num,f,f, 0,-1,0)
 }
 
+fn count2(s:String)->usize
+{
+    let t :Vec<_>= s.split(' ').collect();
+    let num : Vec<i8> = t[1].split(',').map(|s| s.parse::<i8>().unwrap()).collect();
+    let txt = t[0].to_string();
 
+    //let mut st = vec![];    
+    let f = txt.chars().next().unwrap();
+
+    let mut h = HashMap::new();
+    let res = 
+    if f=='?' 
+    { 
+        let b = dfs2(&mut h,&txt,&num,'#','#', 0,0,num[0]);
+        let a = dfs2(&mut h,&txt,&num,'.','.', 0,-1,0);
+        a+b
+    }
+      else
+    {
+        if f=='#'
+        {
+            dfs2(&mut h,&txt,&num,'.',f, 0,-1,0)
+        }
+          else
+        {
+            dfs2(&mut h,&txt,&num,'f',f, 0,-1,0)
+        }
+    };
+    //print!("{} ",s);
+    //println!("res={}",res);
+    res
+   // dfs(&mut st,&txt,&num,f,f, 0,-1,0)
+}
 
 pub fn part1(data:&[String])->usize
 {
