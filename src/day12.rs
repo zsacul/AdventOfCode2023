@@ -1,113 +1,17 @@
 use std::collections::HashMap;
 
-fn print(st:&Vec<char>)
-{
-    print!("stack=[");
-    for c in st
-    {
-        print!("{}",c);
-    }
-    println!("]");
-}
-
-fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i64>,last:char,c:char,id:usize,idlo:i64,lefto:i64)->usize
-{
-    //println!("{}",t);
-    //println!("{}",c);
- 
-    let mut idl  = idlo;
-    let mut left = lefto;
-
-    let end = id==t.len()-1;
-    
-    st.push(c);
-
-    if c=='?' 
-    { 
-        st.pop();
-        
-        let a = dfs(st,t,num,last,'#',id,idlo,lefto); 
-        //st.pop();
-        let b = dfs(st,t,num,last,'.',id,idlo,lefto);
-        //st.pop();
-
-        st.pop();
-        return a+b;
-    }
-
-    if c=='#'
-    {
-        if last=='.' 
-        {
-            if left!=0
-            {
-                //println!(" {:?} id={} idl={} left={} c={}",num,id,idl,left,c);
-                //print(st);
-                //println!("^0");
-                //st.pop();
-                return 0;    
-            }
-            idl+=1;
-            left = *num.iter().nth(idl as usize).unwrap_or(&1);
-        }
-
-        if c=='#'
-        {
-            left-=1;
-        }
-
-        if left<0 {
-            //println!(" {:?} id={} idl={} left={} c={}",num,id,idl,left,c);
-            //print(st);
-            //println!("^2");
-            //st.pop();
-            return 0;    
-        }
-    }   
- 
-    if end
-    {
-        if left==0 && idl==num.len() as i64 -1
-        {            
-            //println!(" {:?} id={} idl={} left={} c={}",num,id,idl,left,c);
-            //print(st);
-            //println!("OK");
-            //st.pop();
-            return 1;   
-        }
-          else 
-        {
-            //println!(" {:?} id={} idl={} left={} c={}",num,id,idl,left,c);
-            //print(st);
-            //println!("^3");
-            //st.pop();
-            return 0;    
-        }
-    }
-
-    let n = t.chars().nth(id+1).unwrap();
-  
-    //st.push(n);
-    let res = dfs(st,t,num,c,n,id+1,idl,left);
-    //st.pop();
-    st.pop();
-    return res;
-}
-
-
 fn dfs2(h:&mut HashMap<(char,char,usize,i8,i8),usize>,t:&str,num:&Vec<i8>,last:char,c:char,id:usize,idlo:i8,lefto:i8)->usize
 {
     let mut idl  = idlo;
     let mut left = lefto;
-
-    let end = id==t.len()-1;
+    
     let key = (last,c,id,idlo,lefto);
+
     if h.contains_key(&key)
     {
         return *h.get(&key).unwrap();
     }
 
-    
     if c=='?' 
     { 
         let a = dfs2(h,t,num,last,'#',id,idlo,lefto); 
@@ -119,97 +23,41 @@ fn dfs2(h:&mut HashMap<(char,char,usize,i8,i8),usize>,t:&str,num:&Vec<i8>,last:c
     {
         if last=='.' 
         {
-            if left!=0
-            {
-                return 0;    
-            }
+            if left!=0 { return 0; }
             idl+=1;
             left = *num.iter().nth(idl as usize).unwrap_or(&1) as i8;
         }
 
-        if c=='#'
-        {
-            left-=1;
-        }
-
-        if left<0 
-        {
-            return 0;
-        }
+        if c=='#' { left-=1;  }
+        if left<0 { return 0; }
     }   
  
-    if end
+    if id==t.len()-1
     {
-        if left==0 && idl==num.len() as i8 -1
-        {            
-            return 1;   
-        }
-          else 
-        {
-            return 0;    
-        }
+        if left==0 && idl==num.len() as i8-1 { return 1; }
+                                        else { return 0; }
     }
 
     let n = t.chars().nth(id+1).unwrap();
     let res = dfs2(h,t,num,c,n,id+1,idl,left);
     h.insert(key,res);
+
     return res;
 }
 
-
 fn count(s:String)->usize
 {
-    return count2(s);
-
-    let t :Vec<_>= s.split(' ').collect();
-    let num : Vec<i64> = t[1].split(',').map(|s| s.parse::<i64>().unwrap()).collect();
-    let txt = t[0].to_string();
-
-    let mut st = vec![];
-    //println!("{} {:?}",txt,num);
-    let f = txt.chars().next().unwrap();
-
-    let res = 
-    if f=='?' 
-    { 
-        let b = dfs(&mut st,&txt,&num,'#','#', 0,0,num[0]);
-        //st.pop();
-        let a = dfs(&mut st,&txt,&num,'.','.', 0,-1,0);
-        a+b
-    }
-      else
-    {
-        if f=='#'
-        {
-            dfs(&mut st,&txt,&num,'.',f, 0,-1,0)
-        }
-          else
-        {
-            dfs(&mut st,&txt,&num,'f',f, 0,-1,0)
-        }
-    };
-    //print!("{} ",s);
-    //println!("res={}",res);
-    res
-   // dfs(&mut st,&txt,&num,f,f, 0,-1,0)
-}
-
-fn count2(s:String)->usize
-{
-    let t :Vec<_>= s.split(' ').collect();
+    let t : Vec<_>= s.split(' ').collect();
     let num : Vec<i8> = t[1].split(',').map(|s| s.parse::<i8>().unwrap()).collect();
     let txt = t[0].to_string();
-
-    //let mut st = vec![];    
     let f = txt.chars().next().unwrap();
 
     let mut h = HashMap::new();
-    let res = 
+    
     if f=='?' 
     { 
-        let b = dfs2(&mut h,&txt,&num,'#','#', 0,0,num[0]);
-        let a = dfs2(&mut h,&txt,&num,'.','.', 0,-1,0);
-        a+b
+        dfs2(&mut h,&txt,&num,'#','#', 0, 0,num[0]) +
+        dfs2(&mut h,&txt,&num,'.','.', 0,-1,     0)
     }
       else
     {
@@ -221,11 +69,7 @@ fn count2(s:String)->usize
         {
             dfs2(&mut h,&txt,&num,'f',f, 0,-1,0)
         }
-    };
-    //print!("{} ",s);
-    //println!("res={}",res);
-    res
-   // dfs(&mut st,&txt,&num,f,f, 0,-1,0)
+    }
 }
 
 pub fn part1(data:&[String])->usize
@@ -237,38 +81,17 @@ pub fn part1(data:&[String])->usize
 
 fn multiply(l:&String)->String
 {
-    let tt = l.split(' ').collect::<Vec<_>>();
-    let mut res = vec![];
-    res.push(tt[0]);
-    res.push(tt[0]);
-    res.push(tt[0]);
-    res.push(tt[0]);
-    res.push(tt[0]);
-
-    let mut res2 = vec![];
-    res2.push(tt[1]);
-    res2.push(tt[1]);
-    res2.push(tt[1]);
-    res2.push(tt[1]);
-    res2.push(tt[1]);
-
-    [res.join("?") , res2.join(",")].join(" ")
+    let tab = l.split(' ').collect::<Vec<_>>();
+    let res1 =  (0..5).map(|_| tab[0] ).collect::<Vec<&str>>();
+    let res2 =  (0..5).map(|_| tab[1] ).collect::<Vec<&str>>();
+    [res1.join("?") , res2.join(",")].join(" ")
 }
 
 pub fn part2(data:&[String])->usize
 {
-    let mut res = 0;
-
-    for s in data
-    {
-        let t = count(multiply(&s.to_string()));
-        println!("{} {}",s,t);
-        res+=t;
-    }
-    //data.iter()
-      //  .map(|s| count(multiply(&s.to_string())) )
-        //.sum()
-    res
+    data.iter()
+        .map(|s| count(multiply(&s.to_string())) )
+        .sum() 
 }
 
 #[allow(unused)]
