@@ -1,36 +1,62 @@
-
-fn dfs(t:&str,num:&Vec<i32>,last:char,c:char,id:usize,idl:i32,left:i32)->usize
+fn print(st:&Vec<char>)
 {
-    println!("{}",t);
-    let mut idl = idl;
+    print!("stack=[");
+    for c in st
+    {
+        print!("{}",c);
+    }
+    println!("]");
+}
+
+fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i32>,last:char,c:char,id:usize,idl:i32,left:i32)->usize
+{
+    //println!("{}",t);
+    println!("{}",c);
+ 
+    let mut idl  = idl;
     let mut left = left;
 
     let end = id==t.len()-1;
+    
+    st.push(c);
 
     if c=='?' 
     { 
-        return dfs(t,num,c,'#',id,idl,left) 
-             + dfs(t,num,c,'.',id,idl,left);
+        st.pop();
+        
+        let a = dfs(st,t,num,last,'#',id,idl,left); 
+        st.pop();
+
+        let b = dfs(st,t,num,last,'.',id,idl,left);
+        st.pop();
+
+        return a+b;
     }
 
     if c=='#'
     {
         if last!=c 
         {
-            if left!=0 && left!=-1 {
+            if left<0
+            {
                 println!(" {:?} {} {}",num,idl,left);
-                println!("^");
+                print(st);
+                println!("^0");
                 return 0;    
             }
             idl+=1;
             left = *num.iter().nth(idl as usize).unwrap_or(&1);
         }
 
-        left-=1;
+        if c=='#'
+        {
+            left-=1;
+        }
 
         if left<0 {
             println!(" {:?} {} {}",num,idl,left);
-            println!("^");
+            print(st);
+            println!("^2");
             return 0;    
         }
     }   
@@ -40,12 +66,14 @@ fn dfs(t:&str,num:&Vec<i32>,last:char,c:char,id:usize,idl:i32,left:i32)->usize
         if left==0 && idl>=num.len() as i32 -1
         {
             println!(" {:?} {} {}",num,idl,left);
+            print(st);
             println!("OK");
             return 1;   
         }
         else {
             println!(" {:?} {} {}",num,idl,left);
-            println!("^");
+            print(st);
+            println!("^3");
             return 0;    
         }
     }
@@ -58,7 +86,15 @@ fn dfs(t:&str,num:&Vec<i32>,last:char,c:char,id:usize,idl:i32,left:i32)->usize
 //
        // }
     }
-/*
+
+    let n = t.chars().nth(id+1).unwrap();
+  
+    //st.push(n);
+    let res = dfs(st,t,num,c,n,id+1,idl,left);
+    st.pop();
+
+    return res;
+    /*
     if left<=0
     {
         idl+=1;
@@ -95,8 +131,7 @@ fn dfs(t:&str,num:&Vec<i32>,last:char,c:char,id:usize,idl:i32,left:i32)->usize
         }
     }
 */
-    let n = t.chars().nth(id+1).unwrap();
-    dfs(t,num,c,n,id+1,idl,left)
+
 }
 
 fn count(s:String)->usize
@@ -105,10 +140,11 @@ fn count(s:String)->usize
     let num : Vec<i32> = t[1].split(',').map(|s| s.parse::<i32>().unwrap()).collect();
     let txt = t[0].to_string();
 
-    dfs(&txt,&num,' ',txt.chars().next().unwrap(), 0,-1,-1)//num[0])
+    let mut st = vec![];
+    println!("{} {:?}",txt,num);
+    let f = txt.chars().next().unwrap();
+    dfs(&mut st,&txt,&num,'m',f, 0,0,num[0])
 }
-
-
 
 pub fn part1(data:&[String])->usize
 {
@@ -165,7 +201,6 @@ fn test3()
     assert_eq!(part1(&v),4);
 }
 
-
 #[test]
 fn test4()
 {
@@ -174,5 +209,3 @@ fn test4()
     ];
     assert_eq!(part1(&v),1);
 }
-
-
