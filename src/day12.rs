@@ -1,11 +1,12 @@
 use std::collections::HashMap;
+type State = (char,char,usize,i8,i8);
 
-fn dfs2(h:&mut HashMap<(char,char,usize,i8,i8),usize>,t:&str,num:&Vec<i8>,last:char,c:char,id:usize,idlo:i8,lefto:i8)->usize
+fn dfs2(h:&mut HashMap<State,usize>,t:&str,num:&Vec<i8>,last:char,c:char,id:usize,id_left:i8,left:i8)->usize
 {
-    let mut idl  = idlo;
-    let mut left = lefto;
+    let mut id_left  = id_left;
+    let mut left = left;
     
-    let key = (last,c,id,idlo,lefto);
+    let key = (last,c,id,id_left,left);
 
     if h.contains_key(&key)
     {
@@ -14,9 +15,8 @@ fn dfs2(h:&mut HashMap<(char,char,usize,i8,i8),usize>,t:&str,num:&Vec<i8>,last:c
 
     if c=='?' 
     { 
-        let a = dfs2(h,t,num,last,'#',id,idlo,lefto); 
-        let b = dfs2(h,t,num,last,'.',id,idlo,lefto);
-        return a+b;
+        return dfs2(h,t,num,last,'#',id,id_left,left) +  
+               dfs2(h,t,num,last,'.',id,id_left,left);
     }
 
     if c=='#'
@@ -24,8 +24,8 @@ fn dfs2(h:&mut HashMap<(char,char,usize,i8,i8),usize>,t:&str,num:&Vec<i8>,last:c
         if last=='.' 
         {
             if left!=0 { return 0; }
-            idl+=1;
-            left = *num.iter().nth(idl as usize).unwrap_or(&1) as i8;
+            id_left+=1;
+            left = *num.get(id_left as usize).unwrap_or(&1);
         }
 
         if c=='#' { left-=1;  }
@@ -34,15 +34,15 @@ fn dfs2(h:&mut HashMap<(char,char,usize,i8,i8),usize>,t:&str,num:&Vec<i8>,last:c
  
     if id==t.len()-1
     {
-        if left==0 && idl==num.len() as i8-1 { return 1; }
-                                        else { return 0; }
+        if left==0 && id_left==num.len() as i8-1 { return 1; }
+                                            else { return 0; }
     }
 
     let n = t.chars().nth(id+1).unwrap();
-    let res = dfs2(h,t,num,c,n,id+1,idl,left);
+    let res = dfs2(h,t,num,c,n,id+1,id_left,left);
     h.insert(key,res);
 
-    return res;
+    res
 }
 
 fn count(s:String)->usize
@@ -59,17 +59,15 @@ fn count(s:String)->usize
         dfs2(&mut h,&txt,&num,'#','#', 0, 0,num[0]) +
         dfs2(&mut h,&txt,&num,'.','.', 0,-1,     0)
     }
-      else
-    {
-        if f=='#'
-        {
+    else if f=='#'
+         {
             dfs2(&mut h,&txt,&num,'.',f, 0,-1,0)
-        }
-          else
-        {
-            dfs2(&mut h,&txt,&num,'f',f, 0,-1,0)
-        }
-    }
+         }
+           else
+         {
+            dfs2(&mut h,&txt,&num,'#',f, 0,-1,0)
+         }
+    
 }
 
 pub fn part1(data:&[String])->usize
@@ -79,7 +77,7 @@ pub fn part1(data:&[String])->usize
         .sum::<usize>()
 }
 
-fn multiply(l:&String)->String
+fn multiply(l:&str)->String
 {
     let tab = l.split(' ').collect::<Vec<_>>();
     let res1 =  (0..5).map(|_| tab[0] ).collect::<Vec<&str>>();
