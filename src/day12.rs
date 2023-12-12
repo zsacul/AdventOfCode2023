@@ -24,11 +24,12 @@ fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i64>,last:char,c:char,id:usize,idlo:i64
     { 
         st.pop();
         
-        let b = dfs(st,t,num,last,'.',id,idlo,lefto);
-        st.pop();
         let a = dfs(st,t,num,last,'#',id,idlo,lefto); 
-        st.pop();
+        //st.pop();
+        let b = dfs(st,t,num,last,'.',id,idlo,lefto);
+        //st.pop();
 
+        st.pop();
         return a+b;
     }
 
@@ -41,6 +42,7 @@ fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i64>,last:char,c:char,id:usize,idlo:i64
                 //println!(" {:?} id={} idl={} left={} c={}",num,id,idl,left,c);
                 //print(st);
                 //println!("^0");
+                //st.pop();
                 return 0;    
             }
             idl+=1;
@@ -56,6 +58,7 @@ fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i64>,last:char,c:char,id:usize,idlo:i64
             //println!(" {:?} id={} idl={} left={} c={}",num,id,idl,left,c);
             //print(st);
             //println!("^2");
+            //st.pop();
             return 0;    
         }
     }   
@@ -67,6 +70,7 @@ fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i64>,last:char,c:char,id:usize,idlo:i64
             //println!(" {:?} id={} idl={} left={} c={}",num,id,idl,left,c);
             //print(st);
             //println!("OK");
+            //st.pop();
             return 1;   
         }
           else 
@@ -74,6 +78,7 @@ fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i64>,last:char,c:char,id:usize,idlo:i64
             //println!(" {:?} id={} idl={} left={} c={}",num,id,idl,left,c);
             //print(st);
             //println!("^3");
+            //st.pop();
             return 0;    
         }
     }
@@ -82,8 +87,8 @@ fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i64>,last:char,c:char,id:usize,idlo:i64
   
     //st.push(n);
     let res = dfs(st,t,num,c,n,id+1,idl,left);
+    //st.pop();
     st.pop();
-
     return res;
 }
 
@@ -100,16 +105,21 @@ fn count(s:String)->usize
     let res = 
     if f=='?' 
     { 
-        let a = dfs(&mut st,&txt,&num,'.','.', 0,-1,0);
-        st.pop();
         let b = dfs(&mut st,&txt,&num,'#','#', 0,0,num[0]);
+        //st.pop();
+        let a = dfs(&mut st,&txt,&num,'.','.', 0,-1,0);
         a+b
     }
       else
     {
-        let r = dfs(&mut st,&txt,&num,f,f, 0,-1,0);
-        st.pop();
-        r
+        if f=='#'
+        {
+            dfs(&mut st,&txt,&num,'.',f, 0,-1,0)
+        }
+          else
+        {
+            dfs(&mut st,&txt,&num,'f',f, 0,-1,0)
+        }
     };
     //print!("{} ",s);
     //println!("res={}",res);
@@ -124,6 +134,11 @@ pub fn part1(data:&[String])->usize
     data.iter()
         .map(|s| count(s.to_string()))
         .sum::<usize>()
+}
+
+fn multiply(l:&String)->String
+{
+    
 }
 
 pub fn part2(data:&[String])->usize
@@ -210,3 +225,79 @@ fn test7()
     ];
     assert_eq!(part1(&v),1);
 }
+
+
+#[test]
+fn test8()
+{
+    let v = vec![
+        "?????#???.??.???? 6,4,1,1,2".to_string(),
+    ];
+    assert_eq!(part1(&v),0);
+}
+
+#[test]
+fn test9()
+{
+    let v = vec![
+        "?????#??????????? 17".to_string(),
+    ];
+    assert_eq!(part1(&v),1);
+}
+
+#[test]
+fn test10()
+{
+    let v = vec![
+        "?????#??????????? 18".to_string(),
+    ];
+    assert_eq!(part1(&v),0);
+}
+#[test]
+fn test11()
+{
+    let v = vec![
+        "?????????? 3,4".to_string(),        
+    ];
+    assert_eq!(part1(&v),6);
+}
+
+#[test]
+fn test12()
+{
+    let v = vec![
+        "???# 1".to_string(),        
+    ];
+    assert_eq!(part1(&v),1);
+
+}
+
+#[test]
+fn test13()
+{
+    let v = vec![
+        "#??? 1".to_string(),        
+    ];
+    assert_eq!(part1(&v),1);
+}
+
+
+
+#[test]
+fn test14()
+{
+    let v = vec![
+    "???.### 1,1,3".to_string(),
+    ".??..??...?##. 1,1,3".to_string(),
+    "?#?#?#?#?#?#?#? 1,3,1,6".to_string(),
+    "????.#...#... 4,1,1".to_string(),
+    "????.######..#####. 1,6,5".to_string(),
+    "?###???????? 3,2,1".to_string(),
+    ];
+    assert_eq!(part2(&v),525152);
+  
+
+}
+
+
+
