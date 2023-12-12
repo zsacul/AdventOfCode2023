@@ -8,7 +8,7 @@ fn print(st:&Vec<char>)
     println!("]");
 }
 
-fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i32>,last:char,c:char,id:usize,idlo:i32,lefto:i32)->usize
+fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i64>,last:char,c:char,id:usize,idlo:i64,lefto:i64)->usize
 {
     //println!("{}",t);
     //println!("{}",c);
@@ -62,7 +62,7 @@ fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i32>,last:char,c:char,id:usize,idlo:i32
  
     if end
     {
-        if left==0 && idl==num.len() as i32 -1
+        if left==0 && idl==num.len() as i64 -1
         {            
             //println!(" {:?} id={} idl={} left={} c={}",num,id,idl,left,c);
             //print(st);
@@ -90,7 +90,7 @@ fn dfs(st:&mut Vec<char>,t:&str,num:&Vec<i32>,last:char,c:char,id:usize,idlo:i32
 fn count(s:String)->usize
 {
     let t :Vec<_>= s.split(' ').collect();
-    let num : Vec<i32> = t[1].split(',').map(|s| s.parse::<i32>().unwrap()).collect();
+    let num : Vec<i64> = t[1].split(',').map(|s| s.parse::<i64>().unwrap()).collect();
     let txt = t[0].to_string();
 
     let mut st = vec![];
