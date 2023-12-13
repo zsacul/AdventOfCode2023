@@ -42,7 +42,8 @@ impl World
             World { hash:hash, dx, dy ,rotated:rotate}
         }
     }
-    
+
+    #[allow(dead_code)]
     fn print(&self)
     {
         println!();
@@ -122,14 +123,11 @@ impl World
             if self.is_mirror(i) 
             { 
                 let v = (i+1) as usize;
-                if self.rotated { res.push(v); }
-                           else { res.push(100*   v); }
+                if self.rotated { res.push(v);     }
+                           else { res.push(100*v); }
                 //return (i+1) as usize; 
             }
         }
-        //res
-
-        //return *res.get(0).unwrap_or(&0)
         res
     }
 }
@@ -139,37 +137,11 @@ fn calc(data:&[String])->usize
     let w1 = World::new(data,false);
     let w2 = World::new(data,true );
 
-    let m1 = w1.mirror();
-    w1.print();
-    //println!("1:{:?}",m1);
-    //if m1!=0 { return m1*100; }
-
-    let m2 = w2.mirror();
-    //w2.print();
-    //println!("2:{:?}",m2); 
-
-    if m1.len()>=1 && m2.len()>=1
-    {
-        100*m1[0] + m2[0]
-    }
-      else 
-    {
-        m1.iter()
-          .chain(m2.iter())
-//        .chain([0,0,0].iter())          
-          .take(2)
-          .copied()
-          .sum()
-    }
-
+    result(w1.mirror(),w2.mirror())
 }
 
 fn result(m1:Vec<usize>,m2:Vec<usize>)->usize
-{
-    //println!("res:");
-    //println!("1:{:?}",m1);
-    //println!("2:{:?}",m2);
-    
+{   
     let r = if m1.len()>=1 && m2.len()>=1
     {
         100*m1[0] + m2[0]
@@ -178,7 +150,7 @@ fn result(m1:Vec<usize>,m2:Vec<usize>)->usize
     {
         let r = m1.iter()
                          .chain(m2.iter())
-                         .chain([0,0,0].iter())
+                         .chain([0,0].iter())
                          .take(2)
                          .copied()
                          .collect::<Vec<usize>>();        
@@ -192,10 +164,10 @@ fn calc2(data:&[String])->usize
     let mut w1 = World::new(data,false);
     let mut w2 = World::new(data,true );
 
-    let m1 = w1.mirror();
-    let m2 = w2.mirror();
-
-    let org = result(m1.clone(),m2.clone());
+    let om1 = w1.mirror();
+    let om2 = w2.mirror();
+    let mut m1 = vec![];
+    let mut m2 = vec![];
 
     for x in 0..w1.dx
     {
@@ -203,50 +175,35 @@ fn calc2(data:&[String])->usize
         {
             let v1 = Vec2::new(x,y);
             let v2 = w1.map(x,y);
+
+            w1.swap(v1);
+            w2.swap(v2);
             
-            let c1 = w1.hash.contains(&v1);
-            let c2 = w2.hash.contains(&v2);
-
-            if c1==c2 //&& !c2
+            let m1n = w1.mirror();
+            let m2n = w2.mirror();
+           
+            for i in m1n 
             {
-                print!("x,y:{},{} ",x,y);
-                println!("v2:{:?}",v2);
-
-                //w1.print();
-                w1.swap(v1);
-                w2.swap(v2);
-                //w2.print();
-                
-                let m1n = w1.mirror();
-                let m2n = w2.mirror();
-                
-                if m1n!=m1 || m2n!=m2
-                {
-                    println!("Mm1{:?}",m1);
-                    println!("Mm2{:?}",m2);
-
-                    w1.print();
-                    w2.print();
-                    
-                    let res = result(m1n,m2n) - org;
-                    println!("result:{}",org);
-                    return res;
-                }
-                
-                w1.swap(Vec2::new(x,y));
-                w2.swap(v2);
+                if !om1.contains(&i) { m1.push(i); }
             }
+           
+            for i in m2n 
+            {
+                if !om2.contains(&i) { m2.push(i); }
+            }           
+            
+            w1.swap(v1);
+            w2.swap(v2);
         }
     }
     
-   0//result(m1,m2)  
-}
+    m1.sort();
+    m1.dedup();
+    m2.sort();
+    m2.dedup();
 
-//97021 too high
-//21010 too low
-//21814 tool low
-//24742 wr
-//35360
+    result(m1,m2)  
+}
 
 pub fn part1(data:&[String])->usize
 {
@@ -272,8 +229,6 @@ pub fn solve(data:&[String])
     println!("part2:{}",part2(data));
 }
 
-
-
 #[test]
 fn test1(){
     let data = 
@@ -297,8 +252,6 @@ fn test1(){
 
     assert_eq!(part1(&data),405);
 }
-
-
 
 #[test]
 fn test2(){
