@@ -1,11 +1,11 @@
-use std::{collections::HashSet};
+use std::collections::HashSet;
 use super::vec2::Vec2;
 
 struct World
 {
-    hash : HashSet<Vec2>,
-    dx   : i64,
-    dy   : i64,
+    hash    : HashSet<Vec2>,
+    dx      : i64,
+    dy      : i64,
     rotated : bool,
 }
 
@@ -15,9 +15,10 @@ impl World
     {
         let mut hash = HashSet::new();
     
-        for y in 0..v.len() {
+        for (y,line) in v.iter().enumerate() 
+        {
             for x in 0..v[y].len() {
-                if v[y].chars().nth(x).unwrap()=='#' 
+                if line.chars().nth(x).unwrap()=='#' 
                 { 
                     hash.insert(Vec2::new(x as i64,y as i64)); 
                 }
@@ -26,20 +27,30 @@ impl World
         hash
     }
 
-    fn new(v:&[String],rotate:bool)->World 
+    fn new(v:&[String],rotated:bool)->World 
     {
         let hash = World::get_data(v);
         
         let dx = v[0].len() as i64;
-        let dy = v.len() as i64;
+        let dy =    v.len() as i64;
 
-        if rotate
+        if rotated
         {
-            World { hash:World::rotate(hash,dy,dx), dx:dy, dy:dx ,rotated:rotate}
+            World { 
+                    hash : World::rotate(hash,dy), 
+                    dx   : dy, 
+                    dy   : dx,
+                    rotated
+                  }
         }
           else
         {
-            World { hash:hash, dx, dy ,rotated:rotate}
+            World { 
+                    hash, 
+                    dx, 
+                    dy,
+                    rotated
+                  }
         }
     }
 
@@ -65,7 +76,7 @@ impl World
         Vec2::new(self.dy-1-y,x)
     }
         
-    fn rotate(h1:HashSet<Vec2>,dx:i64,dy:i64)->HashSet<Vec2>
+    fn rotate(h1:HashSet<Vec2>,dx:i64)->HashSet<Vec2>
     {
         let mut h2 = HashSet::new();
         h1.iter()
@@ -79,7 +90,7 @@ impl World
 
     fn in_range(&self,n:i64)->bool
     {
-        n>=0 && n<self.dy as i64
+        n>=0 && n<self.dy
     }
 
     fn is_mirror(&self,i:i64)->bool
@@ -112,10 +123,10 @@ impl World
     fn swap(&mut self,p:Vec2)
     {
         if self.hash.contains(&p) { self.hash.remove(&p); }
-                             else { self.hash.insert(p); }
+                             else { self.hash.insert( p); }
     }
 
-    fn mirror(&self)->Vec<usize>
+    fn mirrors(&self)->Vec<usize>
     {
         let mut res = vec![];
         for i in 0..self.dy-1
@@ -125,7 +136,6 @@ impl World
                 let v = (i+1) as usize;
                 if self.rotated { res.push(v);     }
                            else { res.push(100*v); }
-                //return (i+1) as usize; 
             }
         }
         res
@@ -137,12 +147,12 @@ fn calc(data:&[String])->usize
     let w1 = World::new(data,false);
     let w2 = World::new(data,true );
 
-    result(w1.mirror(),w2.mirror())
+    result(w1.mirrors(),w2.mirrors())
 }
 
 fn result(m1:Vec<usize>,m2:Vec<usize>)->usize
 {   
-    let r = if m1.len()>=1 && m2.len()>=1
+    if !m1.is_empty() && !m2.is_empty()
     {
         100*m1[0] + m2[0]
     }
@@ -155,8 +165,7 @@ fn result(m1:Vec<usize>,m2:Vec<usize>)->usize
                          .copied()
                          .collect::<Vec<usize>>();        
         r[0] + r[1]
-    };
-    r 
+    }
 }
 
 fn calc2(data:&[String])->usize
@@ -164,8 +173,8 @@ fn calc2(data:&[String])->usize
     let mut w1 = World::new(data,false);
     let mut w2 = World::new(data,true );
 
-    let om1 = w1.mirror();
-    let om2 = w2.mirror();
+    let om1 = w1.mirrors();
+    let om2 = w2.mirrors();
     let mut m1 = vec![];
     let mut m2 = vec![];
 
@@ -178,16 +187,13 @@ fn calc2(data:&[String])->usize
 
             w1.swap(v1);
             w2.swap(v2);
-            
-            let m1n = w1.mirror();
-            let m2n = w2.mirror();
-           
-            for i in m1n 
+                      
+            for i in w1.mirrors()
             {
                 if !om1.contains(&i) { m1.push(i); }
             }
            
-            for i in m2n 
+            for i in w2.mirrors()
             {
                 if !om2.contains(&i) { m2.push(i); }
             }           
@@ -209,7 +215,7 @@ pub fn part1(data:&[String])->usize
 {
     let subs = data.split(|s| s.is_empty()).collect::<Vec<&[String]>>();
     subs.iter()
-        .map(|s| calc(*s))
+        .map(|s| calc(s))
         .sum()
 }
 
@@ -217,7 +223,7 @@ pub fn part2(data:&[String])->usize
 {
     let subs = data.split(|s| s.is_empty()).collect::<Vec<&[String]>>();
     subs.iter()
-        .map(|s| calc2(*s))
+        .map(|s| calc2(s))
         .sum()
 }
 

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 type State = (char,char,usize,i8,i8);
 
+#[allow(clippy::too_many_arguments)]
 fn dfs2(h:&mut HashMap<State,usize>,t:&str,num:&Vec<i8>,last:char,c:char,id:usize,id_left:i8,left:i8)->usize
 {
     let mut id_left  = id_left;
