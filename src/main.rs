@@ -55,13 +55,13 @@ fn main() {
         let day4_data  = tools::read_1d_string("data/day04.txt");
         day04::solve(&day4_data);
     }
-    
+    */
     {
         let _timer = Timer::new();
         let day5_data  = tools::read_1d_string("data/day05.txt");
         day05::solve(&day5_data);
     }
-    
+    /*
     {
         let _timer = Timer::new();
         let day6_data  = tools::read_1d_string("data/day06.txt");
@@ -101,14 +101,12 @@ fn main() {
         let day12_data  = tools::read_1d_string("data/day12.txt");
         day12::solve(&day12_data);
     }
-    */
     
     {
         let _timer = Timer::new();
         let day13_data  = tools::read_1d_string("data/day13.txt");
         day13::solve(&day13_data);
     }
-    /*
 
     {
         let _timer = Timer::new();
