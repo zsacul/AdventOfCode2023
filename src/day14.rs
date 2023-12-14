@@ -16,7 +16,8 @@ impl World
     
         for (y,line) in v.iter().enumerate() 
         {
-            for x in 0..v[y].len() {
+            for x in 0..v[y].len() 
+            {
                 let c= line.chars().nth(x).unwrap();
                 
                 if c!='.'
@@ -42,22 +43,14 @@ impl World
     {
         let mut was = false;
 
-        let ppp = 
-        self.hash.iter()
-                 .filter(|p| p.1==&'O')
-                 .map(|a| *a.0)
-                 .collect::<Vec<_>>();
-
-        for pp in ppp
-        {
-            let pos = Vec2::new(pp.x,pp.y);
-            //let c = self.c(pos);
-            let d = pos.addv(off);
+        for pos in self.get_pos().iter()
+        {        
+            let des = pos.addv(off);
             
-            if self.c(d)=='.' && self.in_range(d)
+            if self.c(des)=='.' && self.in_range(des)
             { 
-                self.hash.insert(d,'O');
-                self.hash.remove(&pos);
+                self.hash.insert(des,'O');
+                self.hash.remove(pos);
                 was = true;
             }          
         }                                                  
@@ -75,16 +68,12 @@ impl World
 
     fn new(v:&[String])->World 
     {
-        let hash = World::get_data(v);
-        
-        let dx = v[0].len() as i64;
-        let dy =    v.len() as i64;
-
-        World { 
-                hash, 
-                dx, 
-                dy,
-              }    
+        World 
+        { 
+            hash : World::get_data(v),
+            dx   : v[0].len() as i64,
+            dy   :    v.len() as i64,
+        }    
     }
 
     fn get_pos(&self)->Vec<Vec2>
@@ -115,33 +104,34 @@ impl World
 
 pub fn part1(data:&[String])->usize
 {
-    let mut world = World::new(data);    
+    let mut world = World::new(data);
+
     while world.roll(Vec2::north()) {}
     world.res()
 }
 
 pub fn part2(data:&[String])->usize
 {
-    let mut count = 0;
     let mut world = World::new(data);
-
-    let mut g = HashMap::new();
+    
+    let mut states = HashMap::new();
     let mut left = 1_000_000_000;
+    let mut count = 0;
   
     while left>0 
     {
         let key = world.get_pos();
  
-        if g.contains_key(&key)
+        if states.contains_key(&key)
         {
-            let cycle_len = count - g.get(&key).unwrap();
+            let cycle_len = count - states.get(&key).unwrap();
             let num = left/cycle_len;
             left  -= num*cycle_len;
             count += num*cycle_len;  
         }
           else
         {
-            g.insert(key,count);
+            states.insert(key,count);
         }
  
         while world.roll(Vec2::north()){};
