@@ -51,7 +51,7 @@ impl World
         for pp in ppp
         {
             let pos = Vec2::new(pp.x,pp.y);
-            let c = self.c(pos);
+            //let c = self.c(pos);
             let d = pos.addv(off);
             
             if self.c(d)=='.' && self.in_range(d)
@@ -68,8 +68,8 @@ impl World
     fn res(&self)->usize
     {
         self.hash.iter()
-                 .filter(|(pos,c)| c==&&'O')
-                 .map(|(pos,c)| (self.dy-pos.y) as usize)
+                 .filter(|(_,c)| c==&&'O')
+                 .map(|(pos,_)| (self.dy-pos.y) as usize)
                  .sum()
     }
 
@@ -85,6 +85,14 @@ impl World
                 dx, 
                 dy,
               }    
+    }
+
+    fn get_pos(&self)->Vec<Vec2>
+    {
+        self.hash.iter()
+                 .filter(|(_,c)| c==&&'O')
+                 .map(|(pos,_)| *pos)
+                 .collect::<Vec<_>>()
     }
 
     #[allow(dead_code)]
@@ -105,44 +113,47 @@ impl World
     }
 }
 
-fn calc(data:&[String])->usize
-{
-    let mut w1 = World::new(data);
-    let north = Vec2::new(0,-1);
-    
-    while w1.roll(north) {}
-    w1.res()
-}
-
-fn calc2(data:&[String])->usize
-{  
-    let north = Vec2::new( 0,-1);
-    let west  = Vec2::new(-1, 0);
-    let south = Vec2::new( 0, 1);
-    let east  = Vec2::new( 1, 0);
- 
-    let mut count = 0;
-    let mut w1 = World::new(data);
-
-    while count<10000 {
-        while w1.roll(north){};
-        while w1.roll(west ){};
-        while w1.roll(south){};
-        while w1.roll(east ){};
-        count+=1;
-    }
-
-    w1.res()
-}
-
 pub fn part1(data:&[String])->usize
 {
-    calc(data)
+    let mut world = World::new(data);    
+    while world.roll(Vec2::north()) {}
+    world.res()
 }
 
 pub fn part2(data:&[String])->usize
 {
-    calc2(data)
+    let mut count = 0;
+    let mut world = World::new(data);
+
+    let mut g = HashMap::new();
+    let mut left = 1_000_000_000;
+  
+    while left>0 
+    {
+        let key = world.get_pos();
+ 
+        if g.contains_key(&key)
+        {
+            let cycle_len = count - g.get(&key).unwrap();
+            let num = left/cycle_len;
+            left  -= num*cycle_len;
+            count += num*cycle_len;  
+        }
+          else
+        {
+            g.insert(key,count);
+        }
+ 
+        while world.roll(Vec2::north()){};
+        while world.roll(Vec2::west() ){};
+        while world.roll(Vec2::south()){};
+        while world.roll(Vec2::east() ){};
+
+        count+=1;
+        left -=1;
+    }
+
+    world.res()    
 }
 
 #[allow(unused)]

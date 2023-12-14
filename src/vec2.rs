@@ -30,6 +30,30 @@ impl Vec2 {
     }
 
     #[allow(unused)]
+    pub fn north()->Self 
+    { 
+        Self { x:   0 , y:-1    } 
+    }
+    
+    #[allow(unused)]
+    pub fn west()->Self 
+    { 
+        Self { x:  -1 , y: 0    } 
+    }
+
+    #[allow(unused)]
+    pub fn south()->Self 
+    { 
+        Self { x:   0 , y: 1    } 
+    }
+    
+    #[allow(unused)]
+    pub fn east()->Self 
+    { 
+        Self { x:   1 , y: 0    } 
+    }
+
+    #[allow(unused)]
     pub fn offset(&mut self,v:&Vec2)
     {
         self.x+=v.x;
