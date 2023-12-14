@@ -69,16 +69,16 @@ impl Value
             {
                 if id>=r.src && id<r.src + r.len
                 {
-                    return Some(r.des + id-r.src);
+                    return Some(r.des + id - r.src);
                 }
                 
-                if id < r.src { return None; }
+                //if id < r.src { return Some(id); }
             }
-            None
+            Some(id)
         }
           else 
         {
-            None    
+            Some(id)
         }        
     }
 
@@ -96,9 +96,9 @@ fn compute(id:usize,values:&[Value])->usize
     let mut id=id;
     for v in values.iter()
     {
-        id = v.map(id).unwrap_or(id);
-        //if g.is_none() { return id; }
-        //id = g.unwrap();
+        let g = v.map(id);
+        if g.is_none() { return id; }
+        id = g.unwrap();
     }
 
     id
