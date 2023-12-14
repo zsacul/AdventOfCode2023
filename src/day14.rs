@@ -19,7 +19,10 @@ impl World
             for x in 0..v[y].len() {
                 let c= line.chars().nth(x).unwrap();
                 
-                hash.insert(Vec2::new(x as i64,y as i64),c); 
+                if c!='.'
+                {
+                    hash.insert(Vec2::new(x as i64,y as i64),c); 
+                }
             }
         }
         hash
@@ -30,23 +33,35 @@ impl World
         *self.hash.get(&p).unwrap_or(&'.')
     }
 
-    fn roll(&mut self)->bool
+    fn in_range(&self,p:Vec2)->bool
+    {
+        p.x>=0 && p.x<self.dx && p.y>=0 && p.y<self.dy
+    }
+
+    fn roll(&mut self,off:Vec2)->bool
     {
         let mut was = false;
-        for y in 0..self.dy
+
+        let ppp = 
+        self.hash.iter()
+                    .filter(|p| p.1==&'O')
+                    .map(|a| *a.0)
+                    .collect::<Vec<_>>();
+
+        for pp in ppp
         {
-            for x in 0..self.dx
-            {
-                let p = Vec2::new(x,y);
-                let c = self.c(p);
-                if c=='.' && self.c(p.b())=='O'
-                { 
-                    self.hash.insert(p,'O');
-                    self.hash.insert(p.b(),'.');
-                    was = true;
-                }
-            }
-        }
+            let pos = Vec2::new(pp.x,pp.y);
+            let c = self.c(pos);
+            let d = pos.addv(off);
+            
+            if self.c(d)=='.' && self.in_range(d)
+            { 
+                self.hash.insert(d,'O');
+                self.hash.remove(&pos);
+                was = true;
+            }          
+        }                                                  
+
         was
     }
 
@@ -79,13 +94,11 @@ impl World
         let dx = v[0].len() as i64;
         let dy =    v.len() as i64;
 
-
-            World { 
-                    hash, 
-                    dx, 
-                    dy,
-                  }
-     
+        World { 
+                hash, 
+                dx, 
+                dy,
+              }    
     }
 
     #[allow(dead_code)]
@@ -98,30 +111,42 @@ impl World
         {
             for x in 0..self.dx
             {
-                let c = self.hash.get(&Vec2::new(x,y)).unwrap();
+                let c = self.hash.get(&Vec2::new(x,y)).unwrap_or(&'.');
                 print!("{}",c);
             }
             println!();
         }
     }
-
-
-
-
 }
 
 fn calc(data:&[String])->usize
 {
     let mut w1 = World::new(data);
-    while w1.roll() {
-
-    }
+    let north = Vec2::new(0,-1);
+    
+    while w1.roll(north) {}
     w1.res()
 }
 
 fn calc2(data:&[String])->usize
-{
-    0
+{  
+    let north = Vec2::new( 0,-1);
+    let west  = Vec2::new(-1, 0);
+    let south = Vec2::new( 0, 1);
+    let east  = Vec2::new( 1, 0);
+ 
+    let mut count = 0;
+    let mut w1 = World::new(data);
+
+    while count<10000 {
+        while w1.roll(north){};
+        while w1.roll(west ){};
+        while w1.roll(south){};
+        while w1.roll(east ){};
+        count+=1;
+    }
+
+    w1.res()
 }
 
 pub fn part1(data:&[String])->usize
