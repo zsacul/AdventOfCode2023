@@ -44,9 +44,9 @@ impl World
 
         let ppp = 
         self.hash.iter()
-                    .filter(|p| p.1==&'O')
-                    .map(|a| *a.0)
-                    .collect::<Vec<_>>();
+                 .filter(|p| p.1==&'O')
+                 .map(|a| *a.0)
+                 .collect::<Vec<_>>();
 
         for pp in ppp
         {
@@ -67,24 +67,10 @@ impl World
 
     fn res(&self)->usize
     {
-        let mut yy = i64::MAX;
-
-        for x in self.hash.iter()
-        {            
-            if x.1==&'O' { yy = yy.min((self.dy-1-x.0.y) as i64); }
-        }
-        
-
-        let mut res = 0;
-        for (pos,v) in self.hash.iter()                                                 
-        {
-            if v==&'O' { 
-                let aa = self.dy-1-pos.y;
-                println!("{:?} {} {}",pos,aa,yy);
-                res+=(self.dy-1-pos.y) +1;//- (yy+1); 
-            }            
-        }
-        res as usize
+        self.hash.iter()
+                 .filter(|(pos,c)| c==&&'O')
+                 .map(|(pos,c)| (self.dy-pos.y) as usize)
+                 .sum()
     }
 
     fn new(v:&[String])->World 
