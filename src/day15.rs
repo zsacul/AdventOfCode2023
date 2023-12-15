@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
 #[derive(Debug,Clone)]
-struct SBox
+struct Box
 {
-    list: Vec<(String,usize)>,    
-    hash: HashSet<String>,
+    list : Vec<(String,usize)>,    
+    hash : HashSet<String>,
 }
 
-impl SBox
+impl Box
 {
     fn new()->Self
     {
@@ -25,21 +25,12 @@ impl SBox
             self.hash.insert(name.to_string());
             self.list.push((name,id));
         }
-        else 
+          else
         {
             self.list = self.list.iter()
-                                  .map(|(n,v)| if *n==name {(*n,id)} else {(*n,*v)})
-                                  .collect::<Vec<_>>();
-            /*let mut i = 0;
-            while i<self.list.len()
-            {
-                if self.list[i].0==name
-                {
-                    self.list[i].1 = id;
-                    break;
-                }
-                i+=1;
-            }*/
+                                 .map(|(n,v)| if *n==name {(n.to_string(),id)} 
+                                                     else {(n.to_string(),*v)})
+                                 .collect();
         }
     }
 
@@ -58,24 +49,23 @@ impl SBox
     }
 }
     
-fn hash(s:String)->u32
+fn hash(s:&str)->usize
 {
     s.chars()
-     .fold(0, |code,b| ((code + (b as usize))*17)%256) as u32
+     .fold(0, |code,b| ((code + (b as usize))*17)%256)
 }
 
 fn count2(lines:Vec<&str>)->usize
 {    
-    let mut boxes = vec![SBox::new();256];
+    let mut boxes = vec![Box::new();256];
 
     for b in lines.iter()
     {
-        let s = b.to_string();
-        let remove = (*b).contains('-');
+        let remove     = (*b).contains('-');
         let split_char = if remove {'-'} else {'='};
-        let tab: Vec<&str> = s.split(split_char).collect();
-        let name = tab[0].to_string();
-        let box_id = hash(name.to_string()) as usize;
+        let tab    = b.split(split_char).collect::<Vec<_>>();
+        let name   = tab[0].to_string();
+        let box_id = hash(name.as_str());
 
         if remove
         {         
@@ -94,12 +84,12 @@ fn count2(lines:Vec<&str>)->usize
          .sum()
 }
 
-pub fn part1(data:&[String])->u32
+pub fn part1(data:&[String])->usize
 {
     let r: Vec<&str> = data[0].split(',').collect();
 
     r.iter()
-     .map(|s| hash(s.to_string()))
+     .map(|s| hash(s))
      .sum() 
 }
 
