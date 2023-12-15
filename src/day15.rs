@@ -1,22 +1,5 @@
 use std::collections::HashSet;
 
-fn hash(s:String)->u32
-{
-    let mut c = 0;
-    let mut l = 0;
-    while l < s.len()
-    {
-        let a = s.chars()
-                      .nth(l as usize)
-                      .unwrap() as u32;
-        c+=a;
-        l+=1;
-        c*=17;
-        c%=256;
-    }
-    c
-}
-
 #[derive(Debug,Clone)]
 struct SBox
 {
@@ -44,7 +27,10 @@ impl SBox
         }
         else 
         {
-            let mut i = 0;
+            self.list = self.list.iter()
+                                  .map(|(n,v)| if *n==name {(*n,id)} else {(*n,*v)})
+                                  .collect::<Vec<_>>();
+            /*let mut i = 0;
             while i<self.list.len()
             {
                 if self.list[i].0==name
@@ -53,47 +39,42 @@ impl SBox
                     break;
                 }
                 i+=1;
-            }
+            }*/
         }
     }
 
-    fn val(&self,box_id:usize)->usize
+    fn val(&self)->usize
     {
-        println!("{:?}",self.list);
-        let res = 
         self.list.iter()
                  .enumerate()
-                 .map(|(id,val)| (box_id+1)*(id+1)*val.1)
-                 .sum();
-                println!("{}",res);
-                res
+                 .map(|(id,val)| (id+1)*val.1)
+                 .sum()
     }
 
     fn remove(&mut self,name:String)
     {
         self.hash.remove(&name);
-
-        self.list
-            .retain(|(n,_)| *n!=name);
+        self.list.retain(|(n,_)| *n!=name);
     }
 }
     
-
-fn count2(s:String)->usize
+fn hash(s:String)->u32
 {
-    let r: Vec<&str> = s.split(',').collect();
+    s.chars()
+     .fold(0, |code,b| ((code + (b as usize))*17)%256) as u32
+}
+
+fn count2(lines:Vec<&str>)->usize
+{    
     let mut boxes = vec![SBox::new();256];
 
-    for b in r.iter()
+    for b in lines.iter()
     {
         let s = b.to_string();
-        let code = hash(s.clone());
-        println!("{} {}",b,code);
-
         let remove = (*b).contains('-');
         let split_char = if remove {'-'} else {'='};
-        let aa: Vec<&str> = s.split(split_char).collect();
-        let name = aa[0].to_string();
+        let tab: Vec<&str> = s.split(split_char).collect();
+        let name = tab[0].to_string();
         let box_id = hash(name.to_string()) as usize;
 
         if remove
@@ -102,14 +83,14 @@ fn count2(s:String)->usize
         }
           else 
         {        
-            let id = aa[1].parse::<usize>().unwrap();
+            let id = tab[1].parse::<usize>().unwrap();
             boxes[box_id].add(name,id);
         }
     }
     
     boxes.iter()
          .enumerate()
-         .map(|(id,b)| b.val(id) )
+         .map(|(id,b)| (id+1)*b.val() )
          .sum()
 }
 
@@ -118,13 +99,14 @@ pub fn part1(data:&[String])->u32
     let r: Vec<&str> = data[0].split(',').collect();
 
     r.iter()
-        .map(|s| hash(s.to_string()))
-        .sum() 
+     .map(|s| hash(s.to_string()))
+     .sum() 
 }
 
 pub fn part2(data:&[String])->usize
 {
-    count2(data[0].to_string())
+    let r: Vec<&str> = data[0].split(',').collect();
+    count2(r)
 }
 
 #[allow(unused)]
