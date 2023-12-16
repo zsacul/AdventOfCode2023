@@ -1,18 +1,17 @@
 use std::collections::HashMap;
-use crate::tools::usize_get_between;
 use super::tools;
 
 use super::vec2::Vec2;
 
 #[derive(Debug,Clone,Copy,PartialEq)]
 enum Dirs {
-    EMPTY=0,
-    N=1,
-    E=2,
-    W=4,
-    S=8,    
+    N = 1,
+    E = 2,
+    W = 4,
+    S = 8,    
 }
 
+#[derive(Debug)]
 struct World
 {
     hash    : HashMap<Vec2,char>,
@@ -58,110 +57,83 @@ impl World
 
     fn go(&mut self,pos:Vec2,dir:Dirs)
     {
-        let dd = dir;
+        let b = self.b(pos) as u8;
+        let dirc = dir as u8;
+
+        if self.in_range(pos)
+        {
+            if b&dirc  !=0
+            {
+                return;
+            }  
+            self.beams.insert(pos,(b | dirc) );   
+        }
+
+        let pos = 
+            match dir
+            {
+                Dirs::N => pos.addv(Vec2::north()),
+                Dirs::E => pos.addv(Vec2::east() ),
+                Dirs::W => pos.addv(Vec2::west() ),
+                Dirs::S => pos.addv(Vec2::south()),
+            };
+
         if !self.in_range(pos)
         {
             return;
         }
 
-       // println!("pos {:?} dir {:?}",pos,dir);
-        let c = self.c(pos) as u8;
-        let b = self.b(pos) as u8;
-
-        //println!("CC {}!",c as char);
-        //println!("BB {}!",b as char);
-
-        //if (c==b'.'||c==b'#') && b==b'.'
-        //{
-            //self.hash.insert(pos, '#');
-        //}
-        let dirc = dd as u8;
-        
-        let d = self.b(pos) as u8;
-
-        if d&dirc  !=0
-        {
-            return;
-        }
-        self.beams.insert(pos,(b | dirc) );
-
-        match c as char
+        match self.c(pos) as char
         {
             '.' =>
             {                
-                match dd
-                {
-                    Dirs::N => self.go(pos.addv(Vec2::north()),Dirs::N),
-                    Dirs::E => self.go(pos.addv(Vec2::east() ),Dirs::E),
-                    Dirs::W => self.go(pos.addv(Vec2::west() ),Dirs::W),
-                    Dirs::S => self.go(pos.addv(Vec2::south()),Dirs::S),
-                    _       => {},
-                };
+                                self.go(pos,dir);
             },
             '-' =>
             {            
-                match dd
+                match dir
                 {
-                    Dirs::E => self.go(pos.addv(Vec2::east() ),Dirs::E),
-                    Dirs::W => self.go(pos.addv(Vec2::west() ),Dirs::W),
-                    Dirs::N | Dirs::S => { self.go(pos.addv(Vec2::east()),Dirs::E);
-                                           self.go(pos.addv(Vec2::west()),Dirs::W);                                           
-                                         },              
-                    _       => {},
-                    
+                    Dirs::N | 
+                    Dirs::S => { 
+                               self.go(pos,Dirs::E);
+                               self.go(pos,Dirs::W);  
+                               },
+            _       => self.go(pos,dir)                    
                 };
             },
             '|' =>
             {
-               // println!("eeeelo");
-                match dd
+                match dir
                 {
-                    Dirs::N => self.go(pos.addv(Vec2::north() ),Dirs::N),
-                    Dirs::S => self.go(pos.addv(Vec2::south() ),Dirs::S),
-                    Dirs::E | Dirs::W => {
-                        self.go(pos.addv(Vec2::north() ),Dirs::N);
-                        self.go(pos.addv(Vec2::south() ),Dirs::S);
-                    },
-                    _       => {},
-                    
+                    Dirs::E | 
+                    Dirs::W => {
+                               self.go(pos,Dirs::N);
+                               self.go(pos,Dirs::S);
+                               },
+                    _       => self.go(pos,dir)
                 };
             },
             '\\' =>
             {            
-                match dd
+                match dir
                 {
-                    Dirs::E => self.go(pos.addv(Vec2::south() ),Dirs::S),
-                    Dirs::W => self.go(pos.addv(Vec2::north() ),Dirs::N),
-                    Dirs::N => {
-                        self.go(pos.addv(Vec2::west() ),Dirs::W);
-                        
-                    },
-                    Dirs::S => {
-                        self.go(pos.addv(Vec2::east() ),Dirs::E);
-
-                    },
-                    _       => {},
-                    
+                    Dirs::E =>  self.go(pos,Dirs::S),
+                    Dirs::W =>  self.go(pos,Dirs::N),
+                    Dirs::N =>  self.go(pos,Dirs::W),
+                    Dirs::S =>  self.go(pos,Dirs::E),
                 };
             },
             '/' =>
             {            
-                match dd
+                match dir
                 {
-                    Dirs::W => self.go(pos.addv(Vec2::south() ),Dirs::S),
-                    Dirs::E => self.go(pos.addv(Vec2::north() ),Dirs::N),
-                    Dirs::N => {
-                        self.go(pos.addv(Vec2::east() ),Dirs::E);
-                    },
-                    Dirs::S => {
-                        self.go(pos.addv(Vec2::west() ),Dirs::W);
-                    },
-                    _       => {},
-                    
+                    Dirs::W =>  self.go(pos,Dirs::S),
+                    Dirs::E =>  self.go(pos,Dirs::N),
+                    Dirs::N =>  self.go(pos,Dirs::E),                    
+                    Dirs::S =>  self.go(pos,Dirs::W),                   
                 };
             },
-            _ => { panic!("unknown char {}",c);
-                 },
+            c => panic!("unknown char {}",c),                 
         };
 
         
@@ -170,22 +142,16 @@ impl World
     fn res(&self)->usize
     {
         self.beams.values().filter(|c| c!=&&0).count()
-        /*
-        self.hash.iter()
-                 .filter(|(_,c)| c==&&'O')
-                 .map(|(pos,_)| (self.dy-pos.y) as usize)
-                 .sum()
-        */
     }
 
     fn new(v:&[String])->World 
     {
         World 
         { 
-            hash : World::get_data(v),
+            hash  : World::get_data(v),
             beams : HashMap::new(),
-            dx   : v[0].len() as i64,
-            dy   :    v.len() as i64,
+            dx    : v[0].len() as i64,
+            dy    :    v.len() as i64,
         }    
     }
 
@@ -195,25 +161,6 @@ impl World
                  .filter(|(_,c)| c==&&'.')
                  .map(|(pos,_)| *pos)
                  .collect::<Vec<_>>()
-    }
-
-    fn get_pos_first(&self)->Vec2
-    {
-        return Vec2::new(0,0);
-        /*
-        for y in 0..self.dy
-        {
-            for x in 0..self.dx
-            {
-                let pos = Vec2::new(x,y);
-                if self.c(pos)=='.'
-                {
-                    return pos;
-                }
-            }
-        }
-        panic!("no start");        
-         */
     }
 
     #[allow(dead_code)]
@@ -261,118 +208,58 @@ impl World
     }
 }
 
-pub fn part1(data:&[String])->usize
-{
-    let mut world = World::new(data);
-    
+fn get_world(data:&[String])->World
+{  
     if data.len()==1  
     {
-        let dd = data[0].split('\n')
-                                     .collect::<Vec<&str>>();
-                                    let d2 = dd.iter()
-                                     .map(|s| s.to_string())
-                                     .collect::<Vec<_>>();
-        world = World::new(d2.as_slice());
+        let d2 = data[0].split('\n')
+                        .map(|s| s.to_string())
+                        .collect::<Vec<_>>();
+        
+        World::new(&d2[1..d2.len()-1])        
     }
+      else 
+    {
+        World::new(data)
+    }
+}
 
-    world.print();
-
-
-    let pos = world.get_pos_first();
-    println!("pos = {:?}",pos);
-    //world.hash.insert(pos,'#');
-    world.beams.insert(pos,Dirs::S as u8 );
-    world.go(pos.b(),Dirs::S);
-
-    world.print();
-    world.printb();
-    
-    
+pub fn part1(data:&[String])->usize
+{
+    let mut world = get_world(data);    
+    world.go(Vec2::new(-1,0),Dirs::E);       
     world.res()
 }
 
 pub fn part2(data:&[String])->usize
 {
-    let mut world = World::new(data);
-    let dx = data[0].len();
-    let dy = data.len();
-    
-    if data.len()==1  
+    let mut world = get_world(data);
+    let dx = world.dx as i64;
+    let dy = world.dy as i64;
+
+    let mut trys = vec![];
+
+    for x in 1..dx as i64
     {
-        let dd = data[0].split('\n')
-                                     .collect::<Vec<&str>>();
-                                    let d2 = dd.iter()
-                                     .map(|s| s.to_string())
-                                     .collect::<Vec<_>>();
-        world = World::new(d2.as_slice());
+        trys.push((Vec2::new(x,-1).b(),Dirs::S));
+        trys.push((Vec2::new(x,dy).u(),Dirs::N));
     }
 
-    world.print();
-
-
-    //let pos = world.get_pos_first();
-    ///println!("pos = {:?}",pos);
-    //world.hash.insert(pos,'#');
-    let mut res = usize::MIN;
-
-
-    //8245
-    //8221
-
-    //for poss in tools::get_2d_i(world.dx as usize,world.dy as usize)
+    for y in 0..dy as i64
     {
-        for x in 1..dx-1 
-        {
-            let pos = Vec2::new(x as i64,-1);
-            world.beams.clear();
-            world.go(pos.b(),Dirs::S);
-            res = res.max(world.res());    
-
-            let pos = Vec2::new(x as i64,dy as i64);
-            world.beams.clear();
-            world.go(pos.u(),Dirs::N);
-            res = res.max(world.res());    
-        }
-
-        for y in 1..dy-1 
-        {
-            let pos = Vec2::new(-1,y as i64);
-            world.beams.clear();
-            world.go(pos.r(),Dirs::E);
-            res = res.max(world.res());    
-
-            let pos = Vec2::new(dx as i64,y as i64);
-            world.beams.clear();
-            world.go(pos.l(),Dirs::W);
-            res = res.max(world.res());    
-        }
-
-/*
-        world.beams.clear();
-        world.go(pos,Dirs::E);
-        res = res.max(world.res());
-
-        world.beams.clear();
-        world.go(pos,Dirs::N);
-        res = res.max(world.res());
-
-        world.beams.clear();
-        world.go(pos,Dirs::W);
-        res = res.max(world.res());
-*/
-
-     //   world.beams.insert(poss,Dirs::EMPTY as u8 );
+        trys.push((Vec2::new(-1,y).r(),Dirs::E));
+        trys.push((Vec2::new(dx,y).l(),Dirs::W));
     }
 
-    //world.beams.insert(pos,Dirs::S as u8 );
-    //world.go(pos.b(),Dirs::S);
-
-    //world.print();
-    //world.printb();
-    
-    
-    //world.res() 
-    res
+    trys.iter()
+        .map(|(pos,dir)|
+        {
+            world.beams.clear();
+            world.go(*pos,*dir);
+            world.res()
+        })
+        .max()
+        .unwrap()
 }
 
 #[allow(unused)]
@@ -383,11 +270,9 @@ pub fn solve(data:&[String])
     println!("part2:{}",part2(data));
 }
 
-#[test]
-fn test1(){
-    let data = 
-    vec![
-r#".|...\....
+#[allow(dead_code)]
+static EXAMPLE: &str = r#"
+.|...\....
 |.-.\.....
 .....|-...
 ........|.
@@ -396,7 +281,14 @@ r#".|...\....
 ..../.\\..
 .-.-/..|..
 .|....-|.\
-..//.|...."#.to_string(),        
+..//.|....
+"#;
+
+#[test]
+fn test1(){
+    let data = 
+    vec![
+        EXAMPLE.to_string(),        
     ];
 
     assert_eq!(part1(&data),46);
@@ -406,16 +298,7 @@ r#".|...\....
 fn test2(){
     let data = 
     vec![
-r#".|...\....
-|.-.\.....
-.....|-...
-........|.
-..........
-.........\
-..../.\\..
-.-.-/..|..
-.|....-|.\
-..//.|...."#.to_string(),  
+        EXAMPLE.to_string(),        
     ];
 
     assert_eq!(part2(&data),51);
