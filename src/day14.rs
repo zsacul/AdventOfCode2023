@@ -122,16 +122,16 @@ pub fn part2(data:&[String])->usize
     {
         let key = world.get_pos();
  
-        if states.contains_key(&key)
+        if !states.contains_key(&key)
+        {
+            states.insert(key,count);
+        }
+            else     
         {
             let cycle_len = count - states.get(&key).unwrap();
             let num = left/cycle_len;
             left  -= num*cycle_len;
             count += num*cycle_len;  
-        }
-          else
-        {
-            states.insert(key,count);
         }
  
         while world.roll(Vec2::north()){};

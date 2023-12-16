@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use super::tools;
-
 use super::vec2::Vec2;
 
 #[derive(Debug,Clone,Copy,PartialEq)]
@@ -47,7 +45,7 @@ impl World
     }
     fn b(&self,p:Vec2)->u8
     {
-        *self.beams.get(&p).unwrap_or(&0) as u8
+        *self.beams.get(&p).unwrap_or(&0)
     }
 
     fn in_range(&self,p:Vec2)->bool
@@ -57,16 +55,16 @@ impl World
 
     fn go(&mut self,pos:Vec2,dir:Dirs)
     {
-        let b = self.b(pos) as u8;
         let dirc = dir as u8;
-
+        
         if self.in_range(pos)
         {
+            let b = self.b(pos);
             if b&dirc  !=0
             {
                 return;
             }  
-            self.beams.insert(pos,(b | dirc) );   
+            self.beams.insert(pos,b | dirc );   
         }
 
         let pos = 
@@ -83,7 +81,7 @@ impl World
             return;
         }
 
-        match self.c(pos) as char
+        match self.c(pos)
         {
             '.' =>
             {                
@@ -155,14 +153,6 @@ impl World
         }    
     }
 
-    fn get_pos(&self)->Vec<Vec2>
-    {
-        self.hash.iter()
-                 .filter(|(_,c)| c==&&'.')
-                 .map(|(pos,_)| *pos)
-                 .collect::<Vec<_>>()
-    }
-
     #[allow(dead_code)]
     fn print(&self)
     {
@@ -179,6 +169,7 @@ impl World
             println!();
         }
     }
+
     #[allow(dead_code)]
     fn printb(&self)
     {
@@ -201,7 +192,6 @@ impl World
                     _ => print!("?"),
                     
                 }
-                //print!("{}",c);
             }
             println!();
         }
@@ -271,7 +261,7 @@ pub fn solve(data:&[String])
 }
 
 #[allow(dead_code)]
-static EXAMPLE: &str = r#"
+static EXAMPLE: &str = r"
 .|...\....
 |.-.\.....
 .....|-...
@@ -282,7 +272,7 @@ static EXAMPLE: &str = r#"
 .-.-/..|..
 .|....-|.\
 ..//.|....
-"#;
+";
 
 #[test]
 fn test1(){
