@@ -43,6 +43,7 @@ impl World
     {
         *self.hash.get(&p).unwrap_or(&'.')
     }
+
     fn b(&self,p:Vec2)->u8
     {
         *self.beams.get(&p).unwrap_or(&0)
@@ -60,7 +61,7 @@ impl World
         if self.in_range(pos)
         {
             let b = self.b(pos);
-            if b&dirc  !=0
+            if b&dirc!=0
             {
                 return;
             }  
@@ -85,7 +86,7 @@ impl World
         {
             '.' =>
             {                
-                                self.go(pos,dir);
+                               self.go(pos,dir);
             },
             '-' =>
             {            
@@ -96,7 +97,7 @@ impl World
                                self.go(pos,Dirs::E);
                                self.go(pos,Dirs::W);  
                                },
-            _       => self.go(pos,dir)                    
+                    _       => self.go(pos,dir)                    
                 };
             },
             '|' =>

@@ -110,6 +110,7 @@ pub fn part1(data:&[String])->usize
     world.res()
 }
 
+#[allow(clippy::map_entry)]
 pub fn part2(data:&[String])->usize
 {
     let mut world = World::new(data);
@@ -133,7 +134,7 @@ pub fn part2(data:&[String])->usize
             left  -= num*cycle_len;
             count += num*cycle_len;  
         }
- 
+
         while world.roll(Vec2::north()){};
         while world.roll(Vec2::west() ){};
         while world.roll(Vec2::south()){};
