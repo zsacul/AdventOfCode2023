@@ -116,7 +116,7 @@ pub fn part1(data:&[String])->usize
 {   
     let values = get_values(&data[2..]);
     let seeds:Vec<usize> = data[0][7..].split(' ').map(|s|s.parse::<usize>().unwrap()).collect();
-    
+    //check if ranges ever overlap
     seeds.iter()
          .map(|s| compute(*s,&values))         
          .min().unwrap()
