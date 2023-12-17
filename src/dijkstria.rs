@@ -54,7 +54,10 @@ pub fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Op
     // Examine the frontier with lower cost nodes first (min-heap)
     while let Some(State { cost, position }) = heap.pop() {
         // Alternatively we could have continued to find all shortest paths
-        if position == goal { return Some(cost); }
+        if position == goal { 
+            //println!("{:?}",dist);
+            return Some(cost); 
+        }
 
         // Important as we may have already found a better way
         if cost > dist[position] { continue; }
@@ -72,6 +75,8 @@ pub fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Op
             }
         }
     }
+
+    
 
     // Goal not reachable
     None

@@ -53,7 +53,7 @@ struct World
     hash    : HashMap<Vec2,char>,    
     dx      : i64,
     dy      : i64,
-    nodes   : Vec<(usize,Dirs,u8)>,
+    nodes   : Vec<(Dirs,u8)>,
     edges   : Vec<(usize,usize,usize)>,
 }
 
@@ -143,12 +143,11 @@ impl World
                     };
 
                     let pp = Vec2::new(x,y);
-                    let cc = self.cost(pp);                    
 
                     for steps in 0..3
                     {
                         let f = self.id(pp, dir, steps);
-                        self.nodes.push((cc,dir,steps));
+                        self.nodes.push((dir,steps));
 
                         let pf = dir.go_from(pp);
                         let pl = dir.left().go_from(pp);
@@ -162,22 +161,22 @@ impl World
             }            
         }
 
-        let sp = Vec2::new(0,0);
-        let ep = Vec2::new(self.dx-1,self.dy-1);
+        let start_point = Vec2::new(0,0);
+        let end_point = Vec2::new(self.dx-1,self.dy-1);
 
-        self.nodes.push((0,Dirs::N,0)); //exit
+        self.nodes.push((Dirs::N,0)); //exit
 
         for i in 0..3
         {
-            self.add_edge(self.id(ep,Dirs::N,i),self.nodes.len()-1,0);
-            self.add_edge(self.id(ep,Dirs::E,i),self.nodes.len()-1,0);
-            self.add_edge(self.id(ep,Dirs::W,i),self.nodes.len()-1,0);
-            self.add_edge(self.id(ep,Dirs::S,i),self.nodes.len()-1,0);
+            self.add_edge(self.id(end_point,Dirs::N,i),self.nodes.len()-1,0);
+            self.add_edge(self.id(end_point,Dirs::E,i),self.nodes.len()-1,0);
+            self.add_edge(self.id(end_point,Dirs::W,i),self.nodes.len()-1,0);
+            self.add_edge(self.id(end_point,Dirs::S,i),self.nodes.len()-1,0);
         }
 
-        self.nodes.push((0,Dirs::N,0)); //enter
-        self.add_edge(self.nodes.len()-1,self.id(sp,Dirs::E,0),0);
-        self.add_edge(self.nodes.len()-1,self.id(sp,Dirs::S,0),0);        
+        self.nodes.push((Dirs::N,0)); //enter
+        self.add_edge(self.nodes.len()-1,self.id(start_point,Dirs::E,0),0);
+        self.add_edge(self.nodes.len()-1,self.id(start_point,Dirs::S,0),0);        
 
     }
 
@@ -200,11 +199,10 @@ impl World
                     };
 
                     let pp = Vec2::new(x,y);
-                    let cc = self.cost(pp);                    
 
                     for steps in 0..10
                     {
-                        self.nodes.push((cc,dir,steps));
+                        self.nodes.push((dir,steps));
 
                         let f = self.id2(pp, dir, steps);
 
@@ -224,30 +222,30 @@ impl World
             }
         }
 
-        let sp = Vec2::new(0,0);
-        let ep = Vec2::new(self.dx-1,self.dy-1);
+        let start_point = Vec2::new(0,0);
+        let end_point = Vec2::new(self.dx-1,self.dy-1);
 
-        self.nodes.push((self.nodes.len()-1,Dirs::N,0)); //exit
+        self.nodes.push((Dirs::N,0)); //exit
 
         for i in 3..10
         {
-            self.add_edge(self.id2(ep,Dirs::N,i),self.nodes.len()-1,0);
-            self.add_edge(self.id2(ep,Dirs::E,i),self.nodes.len()-1,0);
-            self.add_edge(self.id2(ep,Dirs::W,i),self.nodes.len()-1,0);
-            self.add_edge(self.id2(ep,Dirs::S,i),self.nodes.len()-1,0);
+            self.add_edge(self.id2(end_point,Dirs::N,i),self.nodes.len()-1,0);
+            self.add_edge(self.id2(end_point,Dirs::E,i),self.nodes.len()-1,0);
+            self.add_edge(self.id2(end_point,Dirs::W,i),self.nodes.len()-1,0);
+            self.add_edge(self.id2(end_point,Dirs::S,i),self.nodes.len()-1,0);
         }
 
-        self.nodes.push((self.nodes.len(),Dirs::S,0)); //enter
-        self.add_edge(self.nodes.len()-1,self.id2(sp,Dirs::S,0),0);
-        //self.add_edge(self.nodes.len()-1,self.id2(sp,Dirs::N,0),0);
-        self.add_edge(self.nodes.len()-1,self.id2(sp,Dirs::E,0),0);
-        //self.add_edge(self.nodes.len()-1,self.id2(sp,Dirs::W,0),0);        
+        self.nodes.push((Dirs::S,0)); //enter
+        self.add_edge(self.nodes.len()-1,self.id2(start_point,Dirs::S,4),0);
+        //self.add_edge(self.nodes.len()-1,self.id2(start_point,Dirs::N,0),0);
+        self.add_edge(self.nodes.len()-1,self.id2(start_point,Dirs::E,4),0);
+        //self.add_edge(self.nodes.len()-1,self.id2(start_point,Dirs::W,0),0);        
     }
 
 
     //1105 too high
     //1102 too high
-    
+    //1101 OK
     //1098 not
     //998 too low
 
@@ -272,13 +270,9 @@ impl World
     {
         let mut graph: Vec<Vec<dijkstria::Edge>> = vec![vec![];self.nodes.len()];
 
-        println!("nodes = {}",self.nodes.len());
-
         for (f,t,cost) in self.edges.iter()
         {
-            //println!("{} -> {} = {}",f,t,cost);
-            graph[*f].push
-            (
+            graph[*f].push(
                 dijkstria::Edge { node: *t, cost: *cost }
             );
         }
@@ -317,27 +311,13 @@ pub fn part1(data:&[String])->usize
 pub fn part2(data:&[String])->usize
 {
     let mut world = get_world(data);    
-
-    //world.print();
     world.gen_nodes2();
     world.shortest_path(world.nodes.len()-1,world.nodes.len()-2)
-}
-
-#[allow(dead_code)]
-fn trynow()
-{
-    let data = 
-    vec![
-        EXAMPLE.to_string(),        
-    ];
-
-    println!("{}",part1(&data));
 }
 
 #[allow(unused)]
 pub fn solve(data:&[String])
 {
-  // trynow();
     println!("Day17");
     println!("part1:{}",part1(data));
     println!("part2:{}",part2(data));
