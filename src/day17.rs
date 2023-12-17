@@ -76,6 +76,10 @@ impl World
 
     fn cost(&self,p:Vec2)->usize
     {
+        if p.x==0 && p.y==0
+        {
+            return 0;
+        }
          self.hash
              .get(&p)
              .unwrap_or(&'?')
@@ -114,7 +118,7 @@ impl World
         4*10*main + rest
     }
 
-    fn addn(&mut self,f:usize,t:usize,cost:usize)
+    fn add_edge(&mut self,f:usize,t:usize,cost:usize)
     {
         self.edges.push((f,t,cost));
     }
@@ -143,20 +147,19 @@ impl World
 
                     for steps in 0..3
                     {
-                        self.nodes.push((cc,dir,steps));
-
                         let f = self.id(pp, dir, steps);
+                        self.nodes.push((cc,dir,steps));
 
                         let pf = dir.go_from(pp);
                         let pl = dir.left().go_from(pp);
                         let pr = dir.right().go_from(pp);
 
-                        if steps<2 && self.in_range(pf) { self.addn(f,self.id(pf,dir               ,steps+1), self.cost(pf)); }
-                        if            self.in_range(pl) { self.addn(f,self.id(pl,dir.left()   ,0      ), self.cost(pl)); }
-                        if            self.in_range(pr) { self.addn(f,self.id(pr,dir.right()  ,0      ), self.cost(pr)); }
+                        if steps<2 && self.in_range(pf) { self.add_edge(f,self.id(pf,dir               ,steps+1), self.cost(pf)); }
+                        if            self.in_range(pl) { self.add_edge(f,self.id(pl,dir.left()   ,0      ), self.cost(pl)); }
+                        if            self.in_range(pr) { self.add_edge(f,self.id(pr,dir.right()  ,0      ), self.cost(pr)); }
                     }
                 }
-            }
+            }            
         }
 
         let sp = Vec2::new(0,0);
@@ -166,15 +169,15 @@ impl World
 
         for i in 0..3
         {
-            self.addn(self.id(ep,Dirs::N,i),self.nodes.len()-1,0);
-            self.addn(self.id(ep,Dirs::E,i),self.nodes.len()-1,0);
-            self.addn(self.id(ep,Dirs::W,i),self.nodes.len()-1,0);
-            self.addn(self.id(ep,Dirs::S,i),self.nodes.len()-1,0);
+            self.add_edge(self.id(ep,Dirs::N,i),self.nodes.len()-1,0);
+            self.add_edge(self.id(ep,Dirs::E,i),self.nodes.len()-1,0);
+            self.add_edge(self.id(ep,Dirs::W,i),self.nodes.len()-1,0);
+            self.add_edge(self.id(ep,Dirs::S,i),self.nodes.len()-1,0);
         }
 
         self.nodes.push((0,Dirs::N,0)); //enter
-        self.addn(self.nodes.len()-1,self.id(sp,Dirs::E,0),0);
-        self.addn(self.nodes.len()-1,self.id(sp,Dirs::S,0),0);        
+        self.add_edge(self.nodes.len()-1,self.id(sp,Dirs::E,0),0);
+        self.add_edge(self.nodes.len()-1,self.id(sp,Dirs::S,0),0);        
 
     }
 
@@ -209,12 +212,12 @@ impl World
                         let pl = dir.left().go_from(pp);
                         let pr = dir.right().go_from(pp);
 
-                        if steps<9 && self.in_range(pf) { self.addn(f,self.id2(pf,dir               ,steps+1), self.cost(pf)); }
+                        if steps<9 && self.in_range(pf) { self.add_edge(f,self.id2(pf,dir               ,steps+1), self.cost(pf)); }
 
                         if steps>2
                         {
-                            if        self.in_range(pl) { self.addn(f,self.id2(pl,dir.left()   ,0      ), self.cost(pl)); }
-                            if        self.in_range(pr) { self.addn(f,self.id2(pr,dir.right()  ,0      ), self.cost(pr)); }
+                            if        self.in_range(pl) { self.add_edge(f,self.id2(pl,dir.left()   ,0      ), self.cost(pl)); }
+                            if        self.in_range(pr) { self.add_edge(f,self.id2(pr,dir.right()  ,0      ), self.cost(pr)); }
                         }
                     }
                 }
@@ -224,24 +227,29 @@ impl World
         let sp = Vec2::new(0,0);
         let ep = Vec2::new(self.dx-1,self.dy-1);
 
-        self.nodes.push((0,Dirs::N,0)); //exit
+        self.nodes.push((self.nodes.len()-1,Dirs::N,0)); //exit
 
         for i in 3..10
         {
-            self.addn(self.id2(ep,Dirs::N,i),self.nodes.len()-1,0);
-            self.addn(self.id2(ep,Dirs::E,i),self.nodes.len()-1,0);
-            self.addn(self.id2(ep,Dirs::W,i),self.nodes.len()-1,0);
-            self.addn(self.id2(ep,Dirs::S,i),self.nodes.len()-1,0);
+            self.add_edge(self.id2(ep,Dirs::N,i),self.nodes.len()-1,0);
+            self.add_edge(self.id2(ep,Dirs::E,i),self.nodes.len()-1,0);
+            self.add_edge(self.id2(ep,Dirs::W,i),self.nodes.len()-1,0);
+            self.add_edge(self.id2(ep,Dirs::S,i),self.nodes.len()-1,0);
         }
 
-        self.nodes.push((0,Dirs::N,0)); //enter
-        self.addn(self.nodes.len()-1,self.id2(sp,Dirs::E,0),0);
-        self.addn(self.nodes.len()-1,self.id2(sp,Dirs::S,0),0);
+        self.nodes.push((self.nodes.len(),Dirs::S,0)); //enter
+        self.add_edge(self.nodes.len()-1,self.id2(sp,Dirs::S,0),0);
+        //self.add_edge(self.nodes.len()-1,self.id2(sp,Dirs::N,0),0);
+        self.add_edge(self.nodes.len()-1,self.id2(sp,Dirs::E,0),0);
+        //self.add_edge(self.nodes.len()-1,self.id2(sp,Dirs::W,0),0);        
     }
 
 
     //1105 too high
     //1102 too high
+    
+    //1098 not
+    //998 too low
 
     #[allow(dead_code)]
     fn print(&self)
@@ -301,10 +309,9 @@ fn get_world(data:&[String])->World
 
 pub fn part1(data:&[String])->usize
 {
-    let mut world = get_world(data);    
+    let mut world = get_world(data);
     world.gen_nodes();
-    let min_cost = world.shortest_path(world.nodes.len()-1,world.nodes.len()-2);
-    min_cost 
+    world.shortest_path(world.nodes.len()-1,world.nodes.len()-2)
 }
 
 pub fn part2(data:&[String])->usize
@@ -313,8 +320,7 @@ pub fn part2(data:&[String])->usize
 
     //world.print();
     world.gen_nodes2();
-    let min_cost = world.shortest_path(world.nodes.len()-1,world.nodes.len()-2);
-    min_cost
+    world.shortest_path(world.nodes.len()-1,world.nodes.len()-2)
 }
 
 #[allow(dead_code)]
