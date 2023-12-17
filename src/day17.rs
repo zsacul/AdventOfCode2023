@@ -238,12 +238,6 @@ impl World
     }
 
 
-    //1105 too high
-    //1102 too high
-    //1101 OK
-    //1098 not
-    //998 too low
-
     #[allow(dead_code)]
     fn print(&self)
     {
