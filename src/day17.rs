@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use super::vec2::Vec2;
+use super::dijkstria;
 
 #[derive(Debug,Clone,Copy,PartialEq,Eq,Hash)]
 enum Dirs {
@@ -70,33 +71,45 @@ impl World
                 res+=c as usize;
             }
         }
-        res
+        0
     }
 
-    fn go(&mut self,memo:&mut HashMap<(Vec2,Dirs,u8,usize),usize>,pos:Vec2,dir:Dirs,steps:u8)->usize
+    //,memo:&mut HashMap<(Vec2,Dirs,u8,usize),usize>
+    fn go(&mut self,cost:usize,min_cost:&mut usize,pos:Vec2,dir:Dirs,steps:u8)->usize
     {
         let dirc = dir as u8;
 
-       // println!("{:?} {} {}",pos,dir as u8,steps);
-        if steps>2 || !self.in_range(pos) || self.b(pos)>0
+        // println!("{:?} {} {}",pos,dir as u8,steps);
+        if steps>3 || !self.in_range(pos) || self.b(pos)>0
         {
             //println!("-1");
+            return 999999999;
+        }
+        let ccc = self.cost(pos);
+        let cc2 = pos.distance2(self.dx-1,self.dy-1) as usize;
 
+        if cost+ccc>*min_cost || cost+ccc+cc2>*min_cost
+        {
             return 999999999;
         }
 
-
         if pos.x==self.dx-1 && pos.y==self.dy-1
         {
-            //self.printb();
+            if cost+ccc < *min_cost
+            {
+                self.printb();
+                *min_cost = (*min_cost).min(cost+ccc);            
+                println!("{}",min_cost);
+            }
 
             //println!("{}",self.cost(pos));
+
             return self.cost(pos);
         }
 
         self.beams.insert(pos, 1 );
 
-        let key = (pos,dir,steps,self.hash());
+        //let key = (pos,dir,steps,self.hash());
         //if dir!=Dirs::N && 
         //if memo.get(&key).is_some()
         {
@@ -104,10 +117,6 @@ impl World
           //  return memo[&key];
         }
 
-        //let mr = if dir==Dirs::E { steps+1 } else { 1 };
-        //let md = if dir==Dirs::S { steps+1 } else { 1 };
-        //let mu = if dir==Dirs::N { steps+1 } else { 1 };
-        //let ml = if dir==Dirs::W { steps+1 } else { 1 };
         let add=  match dir
         {
             Dirs::N => Vec2::north(),
@@ -115,37 +124,59 @@ impl World
             Dirs::W => Vec2::west() ,
             Dirs::S => Vec2::south(),
         };
-        let mut mo = self.go(memo,pos.addv(add), dir,steps+1) + self.cost(pos);
+        
+        let mut mo = self.go(cost+ccc,min_cost,pos.addv(add), dir,steps+1) ;
 
-        match dir 
+        match dir
         {
+            /*
+            Dirs::E =>
+            {
+                mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::north()),Dirs::N,1) );
+                mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::south()),Dirs::S,1) );
+            },
+            */
             Dirs::E |
             Dirs::W =>
             {
-                mo = mo.min(self.go(memo,pos.addv(Vec2::south()),Dirs::S,1) );
-                mo = mo.min(self.go(memo,pos.addv(Vec2::north()),Dirs::N,1) );
+                //if dir!=Dirs::W
+                {
+                    mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::south()),Dirs::S,1) );
+                }
+                mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::north()),Dirs::N,1) );
             },
+            /*
+            Dirs::N =>
+            {
+                mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::west()),Dirs::W,1) );
+                mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::east()),Dirs::E,1) );
+            },*/
             Dirs::N |
             Dirs::S =>
             {
-                mo = mo.min(self.go(memo,pos.addv(Vec2::east()),Dirs::E,1) );
-                mo = mo.min(self.go(memo,pos.addv(Vec2::west()),Dirs::W,1) );
+                mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::east()),Dirs::E,1) );
+                //if dir!=Dirs::S
+                {                 
+                    mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::west()),Dirs::W,1) );
+                }
+
+
             },
             
         }
         
-        if pos==Vec2::new(0,0)
-        {
+        //if pos==Vec2::new(0,0)
+        //{
             //mo-= self.cost(pos);
-        }
+        //}
         self.beams.remove(&pos);
 
         
-        {
-            memo.insert(key,mo); 
-        }
+        //{
+        //    memo.insert(key,mo); 
+        //}
         
-        mo
+        mo + cost
     }
 
     fn res(&self)->usize
@@ -231,14 +262,23 @@ fn get_world(data:&[String])->World
     }
 }
 
+//1506
+//1501
+//1498
+//1497
+
 pub fn part1(data:&[String])->usize
 {
     let mut memo: HashMap<(Vec2,Dirs,u8,usize),usize> = HashMap::new();
     let mut world = get_world(data);    
 
     world.print();
+    let mut min_cost = usize::MAX;
+//    world.go(&mut memo,0,&mut min_cost,Vec2::new(0,0),Dirs::E,1);
+    world.go(0,&mut min_cost,Vec2::new(0,0),Dirs::S,1);
 
-    world.go(&mut memo,Vec2::new(0,0),Dirs::W,1)
+    println!("{}",min_cost);
+    min_cost - world.cost(Vec2::new(0,0))
     //world.res()
 }
 
@@ -250,12 +290,24 @@ pub fn part2(data:&[String])->usize
     0
 }
 
+fn trynow()
+{
+    let data = 
+    vec![
+        EXAMPLE.to_string(),        
+    ];
+
+    println!("{}",part1(&data));
+
+}
+
 #[allow(unused)]
 pub fn solve(data:&[String])
-{    
+{
+  // trynow();
     println!("Day17");
     println!("part1:{}",part1(data));
-    println!("part2:{}",part2(data));
+    //println!("part2:{}",part2(data));
 }
 
 #[allow(dead_code)]

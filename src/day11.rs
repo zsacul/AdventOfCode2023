@@ -53,7 +53,7 @@ fn calc(data:&[String],s:i64)->usize
         for b in 0..pm.len()
         {
             if a<=b { continue; }
-            res+= pm[a].distance2(&pm[b]);
+            res+= pm[a].distance2v(&pm[b]);
         }
     }
 

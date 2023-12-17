@@ -1,5 +1,6 @@
 use timer::Timer;
 mod tools;
+mod dijkstria;
 //mod cycliclist;
 //mod cyclic2;
 mod timer;

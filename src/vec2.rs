@@ -124,7 +124,14 @@ impl Vec2 {
 
 
     #[allow(unused)]
-    pub fn distance2(&self,p:&Vec2)->i64
+    pub fn distance2(&self,x:i64,y:i64)->i64
+    {
+        (self.x-x).abs() +
+        (self.y-y).abs()
+    }
+
+    #[allow(unused)]
+    pub fn distance2v(&self,p:&Vec2)->i64
     {
         (self.x-p.x).abs() +
         (self.y-p.y).abs()
@@ -147,6 +154,16 @@ impl Vec2 {
         {
             x : self.x + p.x,
             y : self.y + p.y
+        }
+    }
+
+    #[allow(unused)]
+    pub fn sub(&self,x:i64,y:i64)->Vec2
+    {
+        Vec2
+        {
+            x : self.x - x,
+            y : self.y - y
         }
     }
 
