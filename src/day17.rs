@@ -1,13 +1,50 @@
 use std::collections::HashMap;
+use std::vec;
+
 use super::vec2::Vec2;
 use super::dijkstria;
 
 #[derive(Debug,Clone,Copy,PartialEq,Eq,Hash)]
 enum Dirs {
-    N = 1,
-    E = 2,
-    W = 4,
-    S = 8,    
+    N = 0,
+    E = 1,
+    W = 2,
+    S = 3,    
+}
+
+impl Dirs{
+    fn left(&self)->Self
+    {
+        match self
+        {
+            Dirs::N => Dirs::W,
+            Dirs::E => Dirs::N,
+            Dirs::W => Dirs::S,
+            Dirs::S => Dirs::E,
+        }
+    }
+
+    fn right(&self)->Self
+    {
+        match self
+        {
+            Dirs::N => Dirs::E,
+            Dirs::E => Dirs::S,
+            Dirs::W => Dirs::N,
+            Dirs::S => Dirs::W,
+        }
+    }
+
+    fn go_from(&self,p : Vec2)->Vec2
+    {
+        match self
+        {
+            Dirs::N => Vec2::new(p.x  ,p.y-1),
+            Dirs::E => Vec2::new(p.x+1,p.y),
+            Dirs::W => Vec2::new(p.x-1,p.y),
+            Dirs::S => Vec2::new(p.x  ,p.y+1),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -17,6 +54,8 @@ struct World
     beams   : HashMap<Vec2,u8>,
     dx      : i64,
     dy      : i64,
+    nodes   : Vec<(usize,Dirs,u8)>,
+    edges   : Vec<(usize,usize,usize)>,
 }
 
 impl World
@@ -44,14 +83,9 @@ impl World
     {
          self.hash
              .get(&p)
-             .unwrap_or(&'9')
+             .unwrap_or(&'?')
              .to_digit(10)
              .unwrap() as usize
-    }
-
-    fn b(&self,p:Vec2)->u8
-    {
-        *self.beams.get(&p).unwrap_or(&0)
     }
 
     fn in_range(&self,p:Vec2)->bool
@@ -59,130 +93,6 @@ impl World
         p.x>=0 && p.x<self.dx && p.y>=0 && p.y<self.dy
     }
 
-    fn hash(&self)->u128
-    {
-        let mut res : usize = 0;
-        for y in 0..self.dy
-        {
-            for x in 0..self.dx
-            {
-                let c = self.b(Vec2::new(x,y));
-                res*=2;
-                res+=c as usize;
-            }
-        }
-        0
-    }
-
-    //,memo:&mut HashMap<(Vec2,Dirs,u8,usize),usize>
-    fn go(&mut self,cost:usize,min_cost:&mut usize,pos:Vec2,dir:Dirs,steps:u8)->usize
-    {
-        let dirc = dir as u8;
-
-        // println!("{:?} {} {}",pos,dir as u8,steps);
-        if steps>3 || !self.in_range(pos) || self.b(pos)>0
-        {
-            //println!("-1");
-            return 999999999;
-        }
-        let ccc = self.cost(pos);
-        let cc2 = pos.distance2(self.dx-1,self.dy-1) as usize;
-
-        if cost+ccc>*min_cost || cost+ccc+cc2>*min_cost
-        {
-            return 999999999;
-        }
-
-        if pos.x==self.dx-1 && pos.y==self.dy-1
-        {
-            if cost+ccc < *min_cost
-            {
-                self.printb();
-                *min_cost = (*min_cost).min(cost+ccc);            
-                println!("{}",min_cost);
-            }
-
-            //println!("{}",self.cost(pos));
-
-            return self.cost(pos);
-        }
-
-        self.beams.insert(pos, 1 );
-
-        //let key = (pos,dir,steps,self.hash());
-        //if dir!=Dirs::N && 
-        //if memo.get(&key).is_some()
-        {
-            //self.beams.remove(&pos);
-          //  return memo[&key];
-        }
-
-        let add=  match dir
-        {
-            Dirs::N => Vec2::north(),
-            Dirs::E => Vec2::east() ,
-            Dirs::W => Vec2::west() ,
-            Dirs::S => Vec2::south(),
-        };
-        
-        let mut mo = self.go(cost+ccc,min_cost,pos.addv(add), dir,steps+1) ;
-
-        match dir
-        {
-            /*
-            Dirs::E =>
-            {
-                mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::north()),Dirs::N,1) );
-                mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::south()),Dirs::S,1) );
-            },
-            */
-            Dirs::E |
-            Dirs::W =>
-            {
-                //if dir!=Dirs::W
-                {
-                    mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::south()),Dirs::S,1) );
-                }
-                mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::north()),Dirs::N,1) );
-            },
-            /*
-            Dirs::N =>
-            {
-                mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::west()),Dirs::W,1) );
-                mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::east()),Dirs::E,1) );
-            },*/
-            Dirs::N |
-            Dirs::S =>
-            {
-                mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::east()),Dirs::E,1) );
-                //if dir!=Dirs::S
-                {                 
-                    mo = mo.min(self.go(cost+ccc,min_cost,pos.addv(Vec2::west()),Dirs::W,1) );
-                }
-
-
-            },
-            
-        }
-        
-        //if pos==Vec2::new(0,0)
-        //{
-            //mo-= self.cost(pos);
-        //}
-        self.beams.remove(&pos);
-
-        
-        //{
-        //    memo.insert(key,mo); 
-        //}
-        
-        mo + cost
-    }
-
-    fn res(&self)->usize
-    {
-        self.beams.values().filter(|c| c!=&&0).count()
-    }
 
     fn new(v:&[String])->World 
     {
@@ -192,7 +102,87 @@ impl World
             beams : HashMap::new(),
             dx    : v[0].len() as i64,
             dy    :    v.len() as i64,
+            nodes : vec![],
+            edges : vec![],
         }    
+    }
+
+    fn id(&self,t:Vec2,dir:Dirs,steps:u8)->usize
+    {
+        let main = (t.y as usize)*self.dx as usize + t.x as usize;
+        let rest = 3*dir as usize + steps as usize;
+        4*3*main + rest
+    }
+
+    fn addn(&mut self,f:usize,t:usize,cost:usize)
+    {
+        self.edges.push((f,t,cost));
+    }
+
+    fn gen_nodes(&mut self)
+    {
+        for y in 0..self.dy
+        {
+            for x in 0..self.dy
+            {
+                //let c = self.hash.get(&Vec2::new(x,y)).unwrap_or(&'?').to_digit(10).unwrap() as usize;
+
+                for d in 0..4
+                {
+                    let dir = match d
+                    {
+                        0 => Dirs::N,
+                        1 => Dirs::E,
+                        2 => Dirs::W,
+                        3 => Dirs::S,
+                        _ => panic!(""),
+                    };
+
+                    let pp = Vec2::new(x,y);
+                    let cc = self.cost(pp);                    
+
+                    for steps in 0..3
+                    {
+                        self.nodes.push((cc,dir,steps));
+
+                        let f = self.id(pp, dir, steps);
+
+                        let pf = dir.go_from(pp);
+                        let pl = dir.left().go_from(pp);
+                        let pr = dir.right().go_from(pp);
+
+                        if steps<2 && self.in_range(pf) { self.addn(f,self.id(pf,dir               ,steps+1), self.cost(pf)); }
+                        if            self.in_range(pl) { self.addn(f,self.id(pl,dir.left()   ,0      ), self.cost(pl)); }
+                        if            self.in_range(pr) { self.addn(f,self.id(pr,dir.right()  ,0      ), self.cost(pr)); }
+                    }
+                }
+            }
+        }
+
+
+        let sp = Vec2::new(0,0);
+        let ep = Vec2::new(self.dx-1,self.dy-1);
+
+        self.nodes.push((0,Dirs::N,0)); //exit
+
+        for i in 0..3
+        {
+            self.addn(self.id(sp,Dirs::N,i),self.nodes.len()-1,0);
+            self.addn(self.id(sp,Dirs::E,i),self.nodes.len()-1,0);
+            self.addn(self.id(sp,Dirs::W,i),self.nodes.len()-1,0);
+            self.addn(self.id(sp,Dirs::S,i),self.nodes.len()-1,0);
+        }
+
+        self.nodes.push((0,Dirs::N,0)); //enter
+        self.addn(self.nodes.len()-1,self.id(ep,Dirs::E,0),0);
+        self.addn(self.nodes.len()-1,self.id(ep,Dirs::S,0),0);
+       
+
+    }
+
+    fn gen_nodes2(&mut self)
+    {
+        
     }
 
     #[allow(dead_code)]
@@ -244,6 +234,25 @@ impl World
             println!();
         }
     }
+
+    fn get_graph(&self)->Vec<Vec<dijkstria::Edge>>
+    {
+        let mut graph: Vec<Vec<dijkstria::Edge>> = vec![vec![];self.nodes.len()];
+
+        for (f,t,cost) in self.edges.iter()
+        {
+            graph[*f].push
+            (
+                dijkstria::Edge { node: *t, cost: *cost }
+            );
+        }
+        graph
+    }
+
+    fn shortest_path(&self,start_node:usize,end_node:usize)->usize
+    {
+        dijkstria::shortest_path(&self.get_graph(), start_node, end_node).unwrap()       
+    }
 }
 
 fn get_world(data:&[String])->World
@@ -262,34 +271,23 @@ fn get_world(data:&[String])->World
     }
 }
 
-//1506
-//1501
-//1498
-//1497
-
 pub fn part1(data:&[String])->usize
 {
-    let mut memo: HashMap<(Vec2,Dirs,u8,usize),usize> = HashMap::new();
     let mut world = get_world(data);    
-
-    world.print();
-    let mut min_cost = usize::MAX;
-//    world.go(&mut memo,0,&mut min_cost,Vec2::new(0,0),Dirs::E,1);
-    world.go(0,&mut min_cost,Vec2::new(0,0),Dirs::S,1);
-
-    println!("{}",min_cost);
-    min_cost - world.cost(Vec2::new(0,0))
-    //world.res()
+    world.gen_nodes();
+    let min_cost = world.shortest_path(world.nodes.len()-1,world.nodes.len()-2);
+    min_cost + 1 - world.cost(Vec2::zero())
 }
 
 pub fn part2(data:&[String])->usize
 {
-    let mut world = get_world(data);
-    let dx = world.dx as i64;
-    let dy = world.dy as i64;
-    0
+    let mut world = get_world(data);    
+    world.gen_nodes2();
+    let min_cost = world.shortest_path(world.nodes.len()-1,world.nodes.len()-2);
+    min_cost + 1 - world.cost(Vec2::zero())
 }
 
+#[allow(dead_code)]
 fn trynow()
 {
     let data = 
@@ -298,7 +296,6 @@ fn trynow()
     ];
 
     println!("{}",part1(&data));
-
 }
 
 #[allow(unused)]
@@ -344,5 +341,5 @@ fn test2(){
         EXAMPLE.to_string(),        
     ];
 
-    assert_eq!(part2(&data),51);
+    assert_eq!(part2(&data),71);
 }

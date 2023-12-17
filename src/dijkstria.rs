@@ -1,3 +1,4 @@
+//simple dijkstria implementation from rust documentation
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
@@ -28,9 +29,10 @@ impl PartialOrd for State {
 }
 
 // Each node is represented as a `usize`, for a shorter implementation.
-struct Edge {
-    node: usize,
-    cost: usize,
+#[derive(Copy, Clone, Debug)]
+pub struct Edge {
+    pub node: usize,
+    pub cost: usize,
 }
 
 // Dijkstra's shortest path algorithm.
@@ -39,7 +41,7 @@ struct Edge {
 // to each node. This implementation isn't memory-efficient as it may leave duplicate
 // nodes in the queue. It also uses `usize::MAX` as a sentinel value,
 // for a simpler implementation.
-fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option<usize> {
+pub fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: usize, goal: usize) -> Option<usize> {
     // dist[node] = current shortest distance from `start` to `node`
     let mut dist: Vec<_> = (0..adj_list.len()).map(|_| usize::MAX).collect();
 
