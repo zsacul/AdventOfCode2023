@@ -12,7 +12,7 @@ enum Dirs {
     S = 3,    
 }
 
-impl Dirs{
+impl Dirs {
     fn left(&self)->Self
     {
         match self
@@ -45,6 +45,19 @@ impl Dirs{
             Dirs::S => Vec2::new(p.x  ,p.y+1),
         }
     }
+
+    fn from_i32(d:i32)->Self
+    {
+        match d
+        {
+            0 => Dirs::N,
+            1 => Dirs::E,
+            2 => Dirs::W,
+            3 => Dirs::S,
+            _ => panic!(""),
+        }
+    }
+
 }
 
 #[derive(Debug)]
@@ -133,25 +146,17 @@ impl World
             {
                 for d in 0..4
                 {
-                    let dir = match d
-                    {
-                        0 => Dirs::N,
-                        1 => Dirs::E,
-                        2 => Dirs::W,
-                        3 => Dirs::S,
-                        _ => panic!(""),
-                    };
-
-                    let pp = Vec2::new(x,y);
+                    let dir = Dirs::from_i32(d);
+                    let p = Vec2::new(x,y);
 
                     for steps in 0..3
                     {
-                        let f = self.id(pp, dir, steps);
+                        let f = self.id(p, dir, steps);
                         self.nodes.push((dir,steps));
 
-                        let pf = dir.go_from(pp);
-                        let pl = dir.left().go_from(pp);
-                        let pr = dir.right().go_from(pp);
+                        let pf = dir.go_from(p);
+                        let pl = dir.left().go_from(p);
+                        let pr = dir.right().go_from(p);
 
                         if steps<2 && self.in_range(pf) { self.add_edge(f,self.id(pf,dir               ,steps+1), self.cost(pf)); }
                         if            self.in_range(pl) { self.add_edge(f,self.id(pl,dir.left()   ,0      ), self.cost(pl)); }
@@ -162,7 +167,7 @@ impl World
         }
 
         let start_point = Vec2::new(0,0);
-        let end_point = Vec2::new(self.dx-1,self.dy-1);
+        let end_point   = Vec2::new(self.dx-1,self.dy-1);
 
         self.nodes.push((Dirs::N,0)); //exit
 
@@ -189,26 +194,18 @@ impl World
             {
                 for d in 0..4
                 {
-                    let dir = match d
-                    {
-                        0 => Dirs::N,
-                        1 => Dirs::E,
-                        2 => Dirs::W,
-                        3 => Dirs::S,
-                        _ => panic!(""),
-                    };
-
-                    let pp = Vec2::new(x,y);
+                    let dir = Dirs::from_i32(d);
+                    let p   = Vec2::new(x,y);
 
                     for steps in 0..10
                     {
                         self.nodes.push((dir,steps));
 
-                        let f = self.id2(pp, dir, steps);
+                        let f = self.id2(p, dir, steps);
 
-                        let pf = dir.go_from(pp);
-                        let pl = dir.left().go_from(pp);
-                        let pr = dir.right().go_from(pp);
+                        let pf = dir.go_from(p);
+                        let pl = dir.left().go_from(p);
+                        let pr = dir.right().go_from(p);
 
                         if steps<9 && self.in_range(pf) { self.add_edge(f,self.id2(pf,dir               ,steps+1), self.cost(pf)); }
 
@@ -236,10 +233,8 @@ impl World
         }
 
         self.nodes.push((Dirs::S,0)); //enter
-        self.add_edge(self.nodes.len()-1,self.id2(start_point,Dirs::S,4),0);
-        //self.add_edge(self.nodes.len()-1,self.id2(start_point,Dirs::N,0),0);
-        self.add_edge(self.nodes.len()-1,self.id2(start_point,Dirs::E,4),0);
-        //self.add_edge(self.nodes.len()-1,self.id2(start_point,Dirs::W,0),0);        
+        self.add_edge(self.nodes.len()-1,self.id2(start_point,Dirs::S,3),0);
+        self.add_edge(self.nodes.len()-1,self.id2(start_point,Dirs::E,3),0);
     }
 
 
