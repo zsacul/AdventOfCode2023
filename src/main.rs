@@ -20,8 +20,8 @@ mod day13;
 mod day14;
 mod day15;
 mod day16;
-/*
 mod day17;
+/*
 mod day18;
 mod day19;
 mod day20;
@@ -117,7 +117,6 @@ fn main() {
         let day15_data  = tools::read_1d_string("data/day15.txt");
         day15::solve(&day15_data);
     }
-    */
     
     {
         let _timer = Timer::new();
@@ -125,12 +124,13 @@ fn main() {
         day16::solve(&day16_data); 
     }
     
-    /*
+    */
     {
         let _timer = Timer::new();
         let day17_data  = tools::read_1d_string("data/day17.txt");
         day17::solve(&day17_data);
     }
+    /*
     {
         let _timer = Timer::new();
         let day18_data  = tools::read_1d_string("data/day18.txt");
