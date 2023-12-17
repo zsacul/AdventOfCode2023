@@ -50,8 +50,7 @@ impl Dirs{
 #[derive(Debug)]
 struct World
 {
-    hash    : HashMap<Vec2,char>,
-    beams   : HashMap<Vec2,u8>,
+    hash    : HashMap<Vec2,char>,    
     dx      : i64,
     dy      : i64,
     nodes   : Vec<(usize,Dirs,u8)>,
@@ -69,11 +68,7 @@ impl World
             for x in 0..v[y].len() 
             {
                 let c= line.chars().nth(x).unwrap();
-                
-                //if c!='.'
-                {
-                    hash.insert(Vec2::new(x as i64,y as i64),c); 
-                }
+                hash.insert(Vec2::new(x as i64,y as i64),c); 
             }
         }
         hash
@@ -93,13 +88,11 @@ impl World
         p.x>=0 && p.x<self.dx && p.y>=0 && p.y<self.dy
     }
 
-
     fn new(v:&[String])->World 
     {
         World 
         { 
             hash  : World::get_data(v),
-            beams : HashMap::new(),
             dx    : v[0].len() as i64,
             dy    :    v.len() as i64,
             nodes : vec![],
@@ -114,6 +107,13 @@ impl World
         4*3*main + rest
     }
 
+    fn id2(&self,t:Vec2,dir:Dirs,steps:u8)->usize
+    {
+        let main = (t.y as usize)*self.dx as usize + t.x as usize;
+        let rest = 10*dir as usize + steps as usize;
+        4*10*main + rest
+    }
+
     fn addn(&mut self,f:usize,t:usize,cost:usize)
     {
         self.edges.push((f,t,cost));
@@ -125,8 +125,6 @@ impl World
         {
             for x in 0..self.dy
             {
-                //let c = self.hash.get(&Vec2::new(x,y)).unwrap_or(&'?').to_digit(10).unwrap() as usize;
-
                 for d in 0..4
                 {
                     let dir = match d
@@ -159,7 +157,6 @@ impl World
             }
         }
 
-
         let sp = Vec2::new(0,0);
         let ep = Vec2::new(self.dx-1,self.dy-1);
 
@@ -167,22 +164,79 @@ impl World
 
         for i in 0..3
         {
-            self.addn(self.id(sp,Dirs::N,i),self.nodes.len()-1,0);
-            self.addn(self.id(sp,Dirs::E,i),self.nodes.len()-1,0);
-            self.addn(self.id(sp,Dirs::W,i),self.nodes.len()-1,0);
-            self.addn(self.id(sp,Dirs::S,i),self.nodes.len()-1,0);
+            self.addn(self.id(ep,Dirs::N,i),self.nodes.len()-1,0);
+            self.addn(self.id(ep,Dirs::E,i),self.nodes.len()-1,0);
+            self.addn(self.id(ep,Dirs::W,i),self.nodes.len()-1,0);
+            self.addn(self.id(ep,Dirs::S,i),self.nodes.len()-1,0);
         }
 
         self.nodes.push((0,Dirs::N,0)); //enter
-        self.addn(self.nodes.len()-1,self.id(ep,Dirs::E,0),0);
-        self.addn(self.nodes.len()-1,self.id(ep,Dirs::S,0),0);
-       
+        self.addn(self.nodes.len()-1,self.id(sp,Dirs::E,0),0);
+        self.addn(self.nodes.len()-1,self.id(sp,Dirs::S,0),0);        
 
     }
 
+
     fn gen_nodes2(&mut self)
     {
-        
+        for y in 0..self.dy
+        {
+            for x in 0..self.dy
+            {
+                for d in 0..4
+                {
+                    let dir = match d
+                    {
+                        0 => Dirs::N,
+                        1 => Dirs::E,
+                        2 => Dirs::W,
+                        3 => Dirs::S,
+                        _ => panic!(""),
+                    };
+
+                    let pp = Vec2::new(x,y);
+                    let cc = self.cost(pp);                    
+
+                    for steps in 0..10
+                    {
+                        self.nodes.push((cc,dir,steps));
+
+                        let f = self.id2(pp, dir, steps);
+
+                        let pf = dir.go_from(pp);
+                        let pl = dir.left().go_from(pp);
+                        let pr = dir.right().go_from(pp);
+
+                        if steps<9 && self.in_range(pf) { self.addn(f,self.id2(pf,dir               ,steps+1), self.cost(pf)); }
+
+                        if steps>=3
+                        {
+                            if        self.in_range(pl) { self.addn(f,self.id2(pl,dir.left()   ,0      ), self.cost(pl)); }
+                            if        self.in_range(pr) { self.addn(f,self.id2(pr,dir.right()  ,0      ), self.cost(pr)); }
+                        }
+                    }
+                }
+            }
+        }
+
+        let sp = Vec2::new(0,0);
+        let ep = Vec2::new(self.dx-1,self.dy-1);
+
+        self.nodes.push((0,Dirs::N,0)); //exit
+
+        for i in 3..10
+        {
+            self.addn(self.id(ep,Dirs::N,i),self.nodes.len()-1,0);
+            self.addn(self.id(ep,Dirs::E,i),self.nodes.len()-1,0);
+            self.addn(self.id(ep,Dirs::W,i),self.nodes.len()-1,0);
+            self.addn(self.id(ep,Dirs::S,i),self.nodes.len()-1,0);
+        }
+
+        self.nodes.push((0,Dirs::N,0)); //enter
+        self.addn(self.nodes.len()-1,self.id(sp,Dirs::E,0),0);
+        self.addn(self.nodes.len()-1,self.id(sp,Dirs::S,0),0);
+       
+
     }
 
     #[allow(dead_code)]
@@ -197,39 +251,6 @@ impl World
             {
                 let c = self.hash.get(&Vec2::new(x,y)).unwrap_or(&'.');
                 print!("{}",c);
-            }
-            println!();
-        }
-    }
-
-
-    #[allow(dead_code)]
-    fn printb(&self)
-    {
-        println!();
-        println!("dx = {}, dy = {}",self.dx,self.dy);
-
-        for y in 0..self.dy
-        {
-            for x in 0..self.dx
-            {
-                let c = self.beams.get(&Vec2::new(x,y)).unwrap_or(&0);
-
-                match c
-                {
-                    0 => print!("."),
-                    1 => print!("1"),
-                    2 => print!("2"),
-                    3 => print!("3"),
-                    4 => print!("4"),
-                    5 => print!("5"),
-                    6 => print!("6"),
-                    7 => print!("7"),
-                    8 => print!("8"),
-                    9 => print!("9"),
-                    _ => print!("?"),
-                    
-                }
             }
             println!();
         }
@@ -276,7 +297,7 @@ pub fn part1(data:&[String])->usize
     let mut world = get_world(data);    
     world.gen_nodes();
     let min_cost = world.shortest_path(world.nodes.len()-1,world.nodes.len()-2);
-    min_cost + 1 - world.cost(Vec2::zero())
+    min_cost 
 }
 
 pub fn part2(data:&[String])->usize
@@ -284,7 +305,7 @@ pub fn part2(data:&[String])->usize
     let mut world = get_world(data);    
     world.gen_nodes2();
     let min_cost = world.shortest_path(world.nodes.len()-1,world.nodes.len()-2);
-    min_cost + 1 - world.cost(Vec2::zero())
+    min_cost
 }
 
 #[allow(dead_code)]
@@ -304,7 +325,7 @@ pub fn solve(data:&[String])
   // trynow();
     println!("Day17");
     println!("part1:{}",part1(data));
-    //println!("part2:{}",part2(data));
+    println!("part2:{}",part2(data));
 }
 
 #[allow(dead_code)]
@@ -339,6 +360,20 @@ fn test2(){
     let data = 
     vec![
         EXAMPLE.to_string(),        
+    ];
+
+    assert_eq!(part2(&data),94);
+}
+
+#[test]
+fn test3(){
+    let data = 
+    vec![
+        "111111111111".to_string(),
+        "999999999991".to_string(),
+        "999999999991".to_string(),
+        "999999999991".to_string(),
+        "999999999991".to_string(),
     ];
 
     assert_eq!(part2(&data),71);
