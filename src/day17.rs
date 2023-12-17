@@ -121,9 +121,11 @@ impl World
 
     fn gen_nodes(&mut self)
     {
+        self.edges.clear();
+
         for y in 0..self.dy
         {
-            for x in 0..self.dy
+            for x in 0..self.dx
             {
                 for d in 0..4
                 {
@@ -181,7 +183,7 @@ impl World
     {
         for y in 0..self.dy
         {
-            for x in 0..self.dy
+            for x in 0..self.dx
             {
                 for d in 0..4
                 {
@@ -209,7 +211,7 @@ impl World
 
                         if steps<9 && self.in_range(pf) { self.addn(f,self.id2(pf,dir               ,steps+1), self.cost(pf)); }
 
-                        if steps>=3
+                        if steps>2
                         {
                             if        self.in_range(pl) { self.addn(f,self.id2(pl,dir.left()   ,0      ), self.cost(pl)); }
                             if        self.in_range(pr) { self.addn(f,self.id2(pr,dir.right()  ,0      ), self.cost(pr)); }
@@ -226,18 +228,20 @@ impl World
 
         for i in 3..10
         {
-            self.addn(self.id(ep,Dirs::N,i),self.nodes.len()-1,0);
-            self.addn(self.id(ep,Dirs::E,i),self.nodes.len()-1,0);
-            self.addn(self.id(ep,Dirs::W,i),self.nodes.len()-1,0);
-            self.addn(self.id(ep,Dirs::S,i),self.nodes.len()-1,0);
+            self.addn(self.id2(ep,Dirs::N,i),self.nodes.len()-1,0);
+            self.addn(self.id2(ep,Dirs::E,i),self.nodes.len()-1,0);
+            self.addn(self.id2(ep,Dirs::W,i),self.nodes.len()-1,0);
+            self.addn(self.id2(ep,Dirs::S,i),self.nodes.len()-1,0);
         }
 
         self.nodes.push((0,Dirs::N,0)); //enter
-        self.addn(self.nodes.len()-1,self.id(sp,Dirs::E,0),0);
-        self.addn(self.nodes.len()-1,self.id(sp,Dirs::S,0),0);
-       
-
+        self.addn(self.nodes.len()-1,self.id2(sp,Dirs::E,0),0);
+        self.addn(self.nodes.len()-1,self.id2(sp,Dirs::S,0),0);
     }
+
+
+    //1105 too high
+    //1102 too high
 
     #[allow(dead_code)]
     fn print(&self)
@@ -260,8 +264,11 @@ impl World
     {
         let mut graph: Vec<Vec<dijkstria::Edge>> = vec![vec![];self.nodes.len()];
 
+        println!("nodes = {}",self.nodes.len());
+
         for (f,t,cost) in self.edges.iter()
         {
+            //println!("{} -> {} = {}",f,t,cost);
             graph[*f].push
             (
                 dijkstria::Edge { node: *t, cost: *cost }
@@ -303,6 +310,8 @@ pub fn part1(data:&[String])->usize
 pub fn part2(data:&[String])->usize
 {
     let mut world = get_world(data);    
+
+    //world.print();
     world.gen_nodes2();
     let min_cost = world.shortest_path(world.nodes.len()-1,world.nodes.len()-2);
     min_cost
