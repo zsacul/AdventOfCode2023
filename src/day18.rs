@@ -7,6 +7,7 @@ struct Pipes
     dy      : usize,
     field   : Vec<Vec<char>>,
     visited : HashMap<Vec2,usize>,
+    corners : HashMap<Vec2,char>,
 }
 
 impl Pipes 
@@ -27,6 +28,7 @@ impl Pipes
             dy,
             field   : vec![vec!['.';dx];dy],
             visited : HashMap::new(),
+            corners : HashMap::new(),
         };
 
         for (y_pos,y) in data.iter().enumerate()
@@ -76,6 +78,7 @@ impl Pipes
             dy:dy3,
             field   : vec![vec!['.';dx3];dy3],
             visited : HashMap::new(),
+            corners : HashMap::new(),
         };
 
         for y in 0..f.dy
@@ -430,9 +433,248 @@ impl Pipes
 
     }
 
-    fn cou(&self)->usize
+    fn dig1(&mut self,data:&[String])->usize
     {
-        0
+        let mut pos = Vec2::new(0,0);
+        let mov =  data.iter()
+        .map(|l|
+            {
+                //println!("{}",l);
+                let it:Vec<&str> = l.split(' ').collect();
+                let d = it[0].chars().next().unwrap();
+                let n = it[1].parse::<usize>().unwrap();
+                //let c = it[2];
+
+                (d,n)
+            }
+        ).collect::<Vec<(char,usize)>>();
+
+        self.solve(&mov)
+
+    }
+
+    fn dig2(&mut self,data:&[String])->usize
+    {
+        let mut pos = Vec2::new(0,0);
+        let mov =  data.iter()
+            .map(|l|
+            {
+                let it:Vec<&str> = l.split(' ').collect();
+                let cot = it[2][2..].to_string();
+                let col = it[2][2..cot.len()+1].to_string();
+                let nhex = col[..col.len()-1].to_string();
+                let n = usize::from_str_radix(&nhex, 16).unwrap();
+                let c = ['R','D','L','U'][col.chars().last().unwrap().to_digit(10).unwrap() as usize];
+                
+                (c,n)
+            }
+        ).collect::<Vec<(char,usize)>>();
+
+        self.solve(&mov)
+    }
+
+    fn sholeace_polygon_area(points:Vec<Vec2>)->usize
+    {
+        let mut area = 0;
+        let mut j = points.len()-1;
+
+        for i in 0..points.len()
+        {
+            area += (points[j].x + points[i].x) * (points[j].y - points[i].y);
+            j = i;
+        }
+        (area.abs() / 2) as usize
+    }
+
+    fn solve(&mut self,moves:&Vec<(char,usize)>)->usize
+    {
+        println!("moves:{:?}",moves);
+
+        let len:usize = moves.iter()
+              .map(|(d,n)|n)
+              .cloned()
+              .sum();
+
+        let mut points = vec![];
+        let mut p = Vec2::new(0,0);
+
+        points.push(p);
+
+        let mut ups = vec![];
+        let mut prev = '?';
+        for (c,n) in moves
+        {
+            let s = *n as i64;
+            //let mut p = points.last().unwrap_or(&Vec2::new(0,0)).clone();
+            let cor = Self::get_dir(prev,*c);
+            self.corners.insert(p,cor);
+            
+            match c
+            {
+                'U' => { ups.push( (p,Vec2::new(p.x,p.y-s)) ); p.y-=s;         },
+                'D' => { ups.push( (p,Vec2::new(p.x,p.y+s)) ); p.y+=s;         },
+                'R' => {                                          p.x+=*n as i64; },
+                'L' => {                                          p.x-=*n as i64; },
+                _ => panic!("wc"),
+            }
+            
+            prev = *c;
+            points.push(p);
+        }
+
+        self.corners.insert(Vec2::new(0,0),Self::get_dir(prev,moves[0].0));
+
+        println!("corners: {:?}",self.corners);
+        
+
+        //return Self::sholeace_area(points) + len/2 +1;
+
+        let minx = points.iter().map(|k| k.x).min().unwrap();
+        let miny = points.iter().map(|k| k.y).min().unwrap();
+        let maxx = points.iter().map(|k| k.x).max().unwrap();
+        let maxy = points.iter().map(|k| k.y).max().unwrap();
+
+        // println!("minx:{} miny:{} maxx:{} maxy:{}",minx,miny,maxx,maxy);
+
+        let ud =
+        moves.iter()
+             .filter(|(d,_)| d==&'U' || d==&'D')
+             .collect::<Vec<_>>();
+
+        ups.sort_by(|a,b| a.0.x.cmp(&b.0.x));
+        
+        // println!("ups:{:?}",ups);
+
+        let mut fill = 0;
+        for y in miny..=maxy
+        {
+            let a = self.trace(y,&ups);
+            //println!("y:{} a:{}",y,a);
+            fill+=a;
+        }
+
+        //len
+        fill
+
+    }
+
+    fn trace(&self,y:i64,ups:&Vec<(Vec2,Vec2)>)->usize
+    {
+        let mut on = false;
+        let mut res = 0;
+        let mut last = 0;
+        let mut last_on = on;
+
+        //let mut wind = 0;
+        //let mut lastX = 0;
+        let mut prev = '?';
+
+        for (p1,p2) in ups
+        {
+            if (y>=p1.y && y<=p2.y) || (y>=p2.y && y<=p1.y)
+            {
+                let x = p1.x;
+                let mut c = '|';
+                
+                if y==p1.y
+                {
+                    c = *self.corners.get(&Vec2::new(x,p1.y)).unwrap();
+                }
+                else if y==p2.y
+                {
+                    c = *self.corners.get(&Vec2::new(x,p2.y)).unwrap();
+                }
+
+                if on
+                {
+                    res += x - last;
+                }
+
+                if (c=='┘' && prev=='┌') || 
+                   (c=='└' && prev=='┐') || 
+                   (c=='┐' && prev=='└') ||
+                   (c=='┌' && prev=='┘')
+                {
+                    //do not change
+                }
+                  else
+                {
+                    on=!on;
+                }
+                
+               // println!("x:{},y:{} c:{} prev:{} on:{}",x,y,c,prev,on);
+
+                //if on
+                //{
+                  //  res += p1.x-last+1;
+                //}                
+                //('L','U') => '└',
+                //('L','D') => '┌',
+                //('L','L') => '-',
+                //('R','U') => '┘',
+                //('R','D') => '┐',                           
+                //if !on
+                {
+                    last = p1.x;
+                }                            
+                last_on = on;
+
+                prev = c;             
+            }
+        }
+/*
+        on = wind!=0;
+
+        if last!=lastX && on
+        {
+            res += lastX-last+1;
+        }
+        */
+        1 + res as usize
+    }
+
+
+    fn traceO(&self,y:i64,ups:&Vec<(Vec2,Vec2)>)->usize
+    {
+        let mut on = false;
+        let mut res = 0;
+        let mut last = 0;
+        let mut last_on = on;
+
+        let mut wind = 0;
+        let mut lastX = 0;
+
+        for (p1,p2) in ups
+        {
+            if (y>=p1.y && y<=p2.y) || (y>=p2.y && y<=p1.y)
+            {
+                let up = p2.y>p1.y;              
+
+                if up { wind+=1; }
+                 else { wind-=1; }
+
+                 on = wind!=0;
+
+                if on!=last_on
+                {
+                    if !on
+                    {
+                        res += p1.x-last+1;
+                    }
+                    last = p1.x;
+                    last_on = on;
+                }
+                lastX = p1.x;
+            }
+        }
+
+        on = wind!=0;
+
+        if last!=lastX && on
+        {
+            res += lastX-last+1;
+        }
+        res as usize
     }
 
 }
@@ -440,8 +682,11 @@ impl Pipes
 pub fn part1(data:&[String])->usize
 {
     let mut f = Pipes::new(data);
+     f.dig1(data)
+/*     
+    let mut f = Pipes::new(data);
     let (res,cmd_len) = f.dig(data);
-
+    
     let mut f = Pipes::new(res.as_slice());
     let pos_s:Vec2 = f.find_pos('S');
     
@@ -452,31 +697,13 @@ pub fn part1(data:&[String])->usize
     let mut nf = Pipes::grow(&f);
     nf.flood_o(Vec2::new(0,0));    
     nf.count('.') + cmd_len
-    //f.cou()
-    /*
-    let pos_s = f.find_pos('S');
-    f.replace_s(pos_s);
-    f.flood(pos_s,0);
-
-    *f.visited
-      .values()
-      .max()
-      .unwrap() 
-       */
+    */
 }
 
 pub fn part2(data:&[String])->usize
-{
+{    
     let mut f = Pipes::new(data);
-    let pos_s:Vec2 = f.find_pos('S');
-    
-    f.flood(pos_s,0);
-    f.copy();
-    f.replace_s(pos_s);
-
-    let mut nf = Pipes::grow(&f);
-    nf.flood_o(Vec2::new(0,0));    
-    nf.count('.')
+    f.dig2(data)
 }
 
 #[allow(unused)]
@@ -513,65 +740,20 @@ fn test1()
 fn test2()
 {
     let v = vec![
-        "..F7.".to_string(),
-        ".FJ|.".to_string(),
-        "SJ.L7".to_string(),
-        "|F--J".to_string(),
-        "LJ...".to_string(),
+        "R 6 (#70c710)".to_string(),
+        "D 5 (#0dc571)".to_string(),
+        "L 2 (#5713f0)".to_string(),
+        "D 2 (#d2c081)".to_string(),
+        "R 2 (#59c680)".to_string(),
+        "D 2 (#411b91)".to_string(),
+        "L 5 (#8ceee2)".to_string(),
+        "U 2 (#caa173)".to_string(),
+        "L 1 (#1b58a2)".to_string(),
+        "U 2 (#caa171)".to_string(),
+        "R 2 (#7807d2)".to_string(),
+        "U 3 (#a77fa3)".to_string(),
+        "L 2 (#015232)".to_string(),
+        "U 2 (#7a21e3)".to_string(),
     ];
-    assert_eq!(part1(&v),8);
-}
-
-#[test]
-fn test3()
-{
-    let v = vec![
-        "...........".to_string(),
-        ".S-------7.".to_string(),
-        ".|F-----7|.".to_string(),
-        ".||.....||.".to_string(),
-        ".||.....||.".to_string(),
-        ".|L-7.F-J|.".to_string(),
-        ".|..|.|..|.".to_string(),
-        ".L--J.L--J.".to_string(),
-        "...........".to_string(),
-    ];
-    assert_eq!(part2(&v),4);
-}
-
-#[test]
-fn test4()
-{
-    let v = vec![
-        ".F----7F7F7F7F-7....".to_string(),
-        ".|F--7||||||||FJ....".to_string(),
-        ".||.FJ||||||||L7....".to_string(),
-        "FJL7L7LJLJ||LJ.L-7..".to_string(),
-        "L--J.L7...LJS7F-7L7.".to_string(),
-        "....F-J..F7FJ|L7L7L7".to_string(),
-        "....L7.F7||L7|.L7L7|".to_string(),
-        ".....|FJLJ|FJ|F7|.LJ".to_string(),
-        "....FJL-7.||.||||...".to_string(),
-        "....L---J.LJ.LJLJ...".to_string(),
-    ];
-    assert_eq!(part2(&v),8);
-}
-
-
-#[test]
-fn test5()
-{
-    let v = vec![
-        "FF7FSF7F7F7F7F7F---7".to_string(),
-        "L|LJ||||||||||||F--J".to_string(),
-        "FL-7LJLJ||||||LJL-77".to_string(),
-        "F--JF--7||LJLJ7F7FJ-".to_string(),
-        "L---JF-JLJ.||-FJLJJ7".to_string(),
-        "|F|F-JF---7F7-L7L|7|".to_string(),
-        "|FFJF7L7F-JF7|JL---7".to_string(),
-        "7-L-JL7||F7|L7F-7F7|".to_string(),
-        "L.L7LFJ|||||FJL7||LJ".to_string(),
-        "L7JLJL-JLJLJL--JLJ.L".to_string(),
-    ];
-    assert_eq!(part2(&v),10);
+    assert_eq!(part2(&v),952408144115);
 }
