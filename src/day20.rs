@@ -1,0 +1,280 @@
+use std::collections::HashMap;
+use std::collections::VecDeque;
+
+
+
+#[derive(Debug, PartialEq, Eq)]
+struct Node
+{
+    name     : String,
+    list     : Vec<String>,
+    command  : char,
+    pulse    : bool,
+    reveived : HashMap<String,bool>
+}
+
+impl Node
+{
+    fn new(name:String,list:String,command:char)->Self
+    {
+        let nodes = list.split(", ").map(|s| s.to_string()).collect();
+        Self{name,list:nodes,command,pulse:false,reveived:HashMap::new()}
+    }
+
+    fn add_receiver(&mut self,receiver:String)
+    {
+        self.reveived.insert(receiver,false);
+    }
+
+    fn send(&mut self,from:String,val:bool,values:&HashMap<String,bool>)->bool
+    {
+        println!("{} -{}-> {}",from.to_string(),if val {"high"} else {"low"},self.name);
+        
+                
+        if self.command=='%'
+        {
+            if val
+            {
+                return false;
+            }
+              else 
+            {
+                self.pulse = !self.pulse;
+
+                //println!("*** {} -{}-> {}",from.to_string(),if self.pulse {"high"} else {"low"},self.name);
+                return true;
+            }
+        }
+        else if self.command=='&' 
+        {            
+            self.reveived.insert(from.to_string(), val);
+
+            
+            self.pulse = !self.reveived.iter().all(|(n,v)| *values.get(n).unwrap_or(&false));
+
+            //println!("&&&&&&&&&&&& {:?} {}",self.reveived,self.pulse);
+            return true;
+        }
+        else if self.command=='b' 
+        {
+            self.pulse = val;
+            return true;
+        }
+        panic!("Unknown command:{}",self.command);
+        false
+    }
+    
+}
+
+struct World
+{
+    nodes  : HashMap<String,Node>,
+    send_l : usize,
+    send_h : usize,
+}
+
+impl World {
+    fn new(data:&[String])->Self
+    {
+        let mut nodes = HashMap::new();
+
+        for line in data
+        {
+            let mut parts = line.split(" -> ");
+            let namef = parts.next().unwrap().to_string();
+            let command = namef.chars().nth(0).unwrap();
+
+            let name = if command!='b' { namef[1..].to_string() } else { namef.to_string() };
+
+            let list = parts.next().unwrap().to_string();            
+            nodes.insert(name.to_string(),Node::new(name,list,command));
+        }
+
+        nodes.insert("button".to_string(),
+                     Node::new("button".to_string(),
+                     "broadcaster".to_string(),
+                     '?')
+                    );
+        
+        Self{ nodes,
+              send_l : 0,
+              send_h : 0 }
+    }    
+
+    fn add_receivers(&mut self)
+    {        
+        let mut keys = Vec::new();
+        for k in self.nodes.keys()
+        {
+            keys.push(k.to_string());
+        }
+
+        for n in keys
+        {
+            for (l,n) in self.nodes.iter_mut()
+            {
+                n.add_receiver(l.to_string());
+                //self.nodes.get_mut(l.0).unwrap().add_receiver(n.to_string());
+            }
+        }
+    }
+
+    fn click(&mut self)
+    {
+        //println!("{:?}",self.nodes);        
+        //let mut node = self.nodes.get_mut("button").unwrap();
+
+        //let res = self.nodes.get_mut("broadcaster")
+        //                        .unwrap()
+        //                        .pulse("button".to_string(),false);
+
+        //self.send_l+=1;
+
+        let mut values = HashMap::new();
+
+        let mut q = VecDeque::new();
+        q.push_back("button".to_string());
+
+        //let mut res = true;
+
+        while !q.is_empty()
+        {
+            let noder = q.pop_front();
+
+
+            if noder.is_some()
+            {
+                let node = noder.unwrap();
+                let connnections = self.nodes.get_mut(&node).unwrap().list.clone();
+                let pulse = self.nodes.get_mut(&node).unwrap().pulse;
+                
+                for c in connnections.iter()
+                {
+                  //  println!("[{}]",c);
+
+                    if self.nodes.get(c).is_some()
+                    {
+                        if pulse { self.send_h+=1; }
+                            else { self.send_l+=1; }
+
+
+                        
+                        let cc = self.nodes.get_mut(c).unwrap();
+
+                        let res = cc.send(node.to_string(),pulse,&values);
+                        values.insert(c.to_string(),cc.pulse);
+
+                                    
+                        if res { q.push_back(c.to_string());  }            
+                    }
+                }
+            }
+        }
+
+        //println!("click ended");
+        //println!("");
+
+    }
+
+    fn count(&mut self,times:usize)->usize
+    {        
+        for _ in 0..times
+        {
+            //self.add_receivers();
+            self.click();
+        }
+        
+
+        //self.add_receivers();
+        //self.click();
+        //self.add_receivers();
+        //self.click();
+
+        println!("send low :{}",self.send_l);
+        println!("send high:{}",self.send_h);
+
+        self.send_h*self.send_l
+    }
+
+    fn count2(&mut self)->usize
+    {
+        
+        0
+    }
+}
+
+pub fn part1(data:&[String])->usize
+{
+    let mut w = World::new(data);    
+    w.count(1000)
+}
+
+pub fn part2(data:&[String])->usize
+{
+    let mut w = World::new(data);
+    w.count(1)
+}
+
+#[allow(unused)]
+pub fn solve(data:&[String])
+{    
+    println!("Day20");
+    println!("part1:{}",part1(data));
+    println!("part2:{}",part2(data));
+}
+
+#[test]
+fn test1()
+{
+    let v = 
+    vec![
+        "broadcaster -> a, b, c".to_string(),
+        "%a -> b".to_string(),
+        "%b -> c".to_string(),
+        "%c -> inv".to_string(),
+        "&inv -> a".to_string(),
+    ];
+    assert_eq!(part1(&v),19114);
+}
+
+#[test]
+fn test2()
+{
+    let v = vec![
+        "broadcaster -> a, b, c".to_string(),
+        "%a -> b".to_string(),
+        "%b -> c".to_string(),
+        "%c -> inv".to_string(),
+        "&inv -> a".to_string(),
+    ];
+    assert_eq!(part1(&v),32000000);
+}
+
+
+#[test]
+fn test3()
+{
+    let v = vec![
+        "broadcaster -> a".to_string(),
+        "%a -> inv, con".to_string(),
+        "&inv -> b".to_string(),
+        "%b -> con".to_string(),
+        "&con -> output".to_string(),
+    ];
+    assert_eq!(part1(&v),11687500);
+}
+
+
+#[test]
+fn test5()
+{
+    let v = vec![
+        "broadcaster -> a, b, c".to_string(),
+        "%a -> b".to_string(),
+        "%b -> c".to_string(),
+        "%c -> inv".to_string(),
+        "&inv -> a".to_string(),
+    ];
+    assert_eq!(part2(&v),167409079868000);
+}
+
