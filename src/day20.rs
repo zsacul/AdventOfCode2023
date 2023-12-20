@@ -27,8 +27,6 @@ impl Node
     fn send(&mut self,from:String,val:bool,values:&HashMap<String,bool>)->(bool,bool)
     {
         //println!("{} -{}-> {}",from.to_string(),if val {"high"} else {"low"},self.name);
-                
-        self.reveived.insert(from.to_string(), val);
         
         if self.command=='%'
         {
@@ -40,14 +38,11 @@ impl Node
             {
                 self.pulse = !self.pulse;
                 return (true,self.pulse);
-                //println!("*** {} -{}-> {}",from.to_string(),if self.pulse {"high"} else {"low"},self.name);
             }
         }
         else if self.command=='&' 
         {
-            self.pulse = !self.reveived.iter().all(|(n,v)| *values.get(n).unwrap_or(&false));
-            //println!("&&&&&&&&&&&& {:?} {}",self.reveived,self.pulse);
-            
+            self.pulse = !self.reveived.keys().all(|n| *values.get(n).unwrap_or(&false));
             return (true,self.pulse);
         }
         else if self.command=='b' 
@@ -60,8 +55,6 @@ impl Node
             return (false,self.pulse);
         }
         panic!("Unknown command:{}",self.command);
-
-        (false,false)
     }
     
 }
@@ -71,6 +64,7 @@ struct World
     nodes  : HashMap<String,Node>,
     send_l : usize,
     send_h : usize,
+    done2  : bool,
 }
 
 impl World 
@@ -99,7 +93,8 @@ impl World
         
         Self{ nodes,
               send_l : 0,
-              send_h : 0 }
+              send_h : 0,
+              done2  : false }
     }    
 
     #[allow(unused)]
@@ -143,7 +138,6 @@ impl World
         }
     }
 
-
     fn click(&mut self,values:&mut HashMap<String,bool>)
     {
         let mut q = VecDeque::new();
@@ -181,6 +175,11 @@ impl World
 
                         let res = cc.send(node.to_string(),pulse,&values);
 
+                        if !pulse && c=="rx"
+                        {
+                            self.done2 = true;
+                        }
+
                         values.insert(c.to_string(),cc.pulse);
                                     
                         if res.0 { q.push_back((c.to_string(),res.1)); }
@@ -189,6 +188,11 @@ impl World
             //}
         }
     }
+
+    //&mp
+    //&qt
+    //&qb
+    //&ng
 
     fn count(&mut self,times:usize)->usize
     {        
@@ -199,28 +203,50 @@ impl World
         for _ in 0..times
         {
             self.click(&mut values);
-            
-            //println!("");
-            
-            //for (n,v) in values.iter_mut()
-            //{            
-              //  values.insert(n.to_string(),false);
-            //}
         }
-        //
-        //self.click();
-        //self.add_receivers();
-        //self.click();
-        println!("");
-        println!("send low :{}",self.send_l);
-        println!("send high:{}",self.send_h);
+
+
+        //println!("send low :{}",self.send_l);
+        //println!("send high:{}",self.send_h);
 
         self.send_h*self.send_l
     }
 
     fn count2(&mut self)->usize
     {
-        0
+        let mut values = HashMap::new();
+
+        self.add_receivers();
+
+        //for _ in 0..times
+        let mut times=1;
+
+        loop
+        {
+            self.click(&mut values);
+
+            if self.done2
+            {
+                return times;
+            }
+
+            //if times>1_000_000
+            //{
+              //  return 0;
+            //}
+
+            if times%100000==0
+            {
+                println!("{}:{}",times,self.send_h*self.send_l);
+            }
+            times+=1;
+        }
+
+
+        //println!("send low :{}",self.send_l);
+        //println!("send high:{}",self.send_h);
+
+        //self.send_h*self.send_l
     }
 }
 
@@ -233,15 +259,30 @@ pub fn part1(data:&[String])->usize
 pub fn part2(data:&[String])->usize
 {
     let mut w = World::new(data);
-    w.count(1)
+    w.count2()
 }
 
 #[allow(unused)]
 pub fn solve(data:&[String])
 {    
     println!("Day20");
-    println!("part1:{}",part1(data));
-   // println!("part2:{}",part2(data));
+    //println!("part1:{}",part1(data));
+    //println!("part2:{}",part2(data));
+    compute()
+}
+
+fn compute()
+{
+    let v = vec![
+        "broadcaster -> a, b, c".to_string(),
+        "%a -> b".to_string(),
+        "%b -> c".to_string(),
+        "%c -> inv".to_string(),
+        "&inv -> a".to_string(),
+    ];
+
+    let res = part2(&v);
+    println!("part2:{}",res);
 }
 
 #[test]
@@ -269,9 +310,9 @@ fn test2()
     ];
     assert_eq!(part1(&v),11687500);
 }
-/*
+
 #[test]
-fn test5()
+fn test3()
 {
     let v = vec![
         "broadcaster -> a, b, c".to_string(),
@@ -280,6 +321,5 @@ fn test5()
         "%c -> inv".to_string(),
         "&inv -> a".to_string(),
     ];
-    assert_eq!(part2(&v),167409079868000);
+    assert_eq!(part2(&v),9999999999999999);
 }
-*/
