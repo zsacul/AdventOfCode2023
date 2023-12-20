@@ -112,7 +112,7 @@ impl World
 
         for name in keys.iter()
         {
-        let des :Vec<String>=
+            let des : Vec<String> =
             self.nodes
                 .get(name)
                 .unwrap()
@@ -120,20 +120,20 @@ impl World
             
                 for s in des.iter() 
                 {                        
-                    let nn = self.nodes
-                                            .get_mut(s);
+                    let nn = self.nodes.get_mut(s);
 
                     if nn.is_some()
                     {
                         self.nodes
-                        .get_mut(s)
-                        .unwrap()
-                        .add_receiver(name.to_string());
+                            .get_mut(s)
+                            .unwrap()
+                            .add_receiver(name.to_string());
                     }
                 }
         }
     }
 
+    #[allow(unused)]
     fn reset(&mut self)
     {
         for (_,n) in self.nodes.iter_mut()
@@ -151,9 +151,9 @@ impl World
         {
             let (node,pulse) = q.pop_front().unwrap();
 
-            let connnections = self.nodes.get_mut(&node).unwrap().list.clone();
+            // if node=="mp" {break;}
 
-            for c in connnections.iter()
+            for c in self.nodes.get(&node).unwrap().list.clone().iter()
             {
                 if self.nodes.get(c).is_none()
                 {
@@ -164,12 +164,12 @@ impl World
                 if self.nodes.get(c).is_some()
                 {
                     let cc = self.nodes.get_mut(c).unwrap();
-                    values.insert(c.to_string(),cc.pulse);
+                    //values.insert(c.to_string(),cc.pulse);
 
                     if pulse { self.send_h+=1; }
                         else { self.send_l+=1; }
 
-                    let res = cc.send(pulse,&values);
+                    let res = cc.send(pulse,values);
 
                     if !pulse && c=="rx"
                     {
@@ -207,6 +207,11 @@ impl World
         self.send_h*self.send_l
     }
 
+    fn get_hash_vals(v:&HashMap<String,bool>)->String
+    {
+        v.values().map(|b| if *b {'1'} else {'0'}).collect()
+    }
+
     fn count2(&mut self)->usize
     {
         let mut values = HashMap::new();
@@ -230,10 +235,29 @@ impl World
               //  return 0;
             //}
 
-            if times%100000==0
+            if times%1_000_000==0
             {
-                println!("{}:{}",times,self.send_h*self.send_l);
+                println!("{}={}",times,Self::get_hash_vals(&values));
             }
+            //get_hash_vals(
+
+            if *values.get("mp").unwrap_or(&false)
+            {
+                println!("mp:{}",times);
+            }
+            if *values.get("qt").unwrap_or(&false)
+            {
+                println!("qt:{}",times);
+            }
+            if *values.get("qb").unwrap_or(&false)
+            {
+                println!("qb:{}",times);
+            }
+            if *values.get("ng").unwrap_or(&false)
+            {
+                println!("ng:{}",times);
+            }
+            
             times+=1;
         }
 
@@ -262,10 +286,11 @@ pub fn solve(data:&[String])
 {    
     println!("Day20");
     println!("part1:{}",part1(data));
-    //println!("part2:{}",part2(data));
-    //compute()
+    println!("part2:{}",part2(data));
+    
 }
 
+#[allow(unused)]
 fn compute()
 {
     let v = vec![
