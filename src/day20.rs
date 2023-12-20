@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 use std::collections::VecDeque;
 
-
-
 #[derive(Debug, PartialEq, Eq)]
 struct Node
 {
@@ -26,42 +24,44 @@ impl Node
         self.reveived.insert(receiver,false);
     }
 
-    fn send(&mut self,from:String,val:bool,values:&HashMap<String,bool>)->bool
+    fn send(&mut self,from:String,val:bool,values:&HashMap<String,bool>)->(bool,bool)
     {
-        println!("{} -{}-> {}",from.to_string(),if val {"high"} else {"low"},self.name);
-        
+        //println!("{} -{}-> {}",from.to_string(),if val {"high"} else {"low"},self.name);
                 
+        self.reveived.insert(from.to_string(), val);
+        
         if self.command=='%'
         {
             if val
             {
-                return false;
+                return (false,false);
             }
               else 
             {
                 self.pulse = !self.pulse;
-
+                return (true,self.pulse);
                 //println!("*** {} -{}-> {}",from.to_string(),if self.pulse {"high"} else {"low"},self.name);
-                return true;
             }
         }
         else if self.command=='&' 
-        {            
-            self.reveived.insert(from.to_string(), val);
-
-            
+        {
             self.pulse = !self.reveived.iter().all(|(n,v)| *values.get(n).unwrap_or(&false));
-
             //println!("&&&&&&&&&&&& {:?} {}",self.reveived,self.pulse);
-            return true;
+            
+            return (true,self.pulse);
         }
         else if self.command=='b' 
         {
             self.pulse = val;
-            return true;
+            return (true,self.pulse);
+        }
+        else if self.command=='X' 
+        {
+            return (false,self.pulse);
         }
         panic!("Unknown command:{}",self.command);
-        false
+
+        (false,false)
     }
     
 }
@@ -73,7 +73,8 @@ struct World
     send_h : usize,
 }
 
-impl World {
+impl World 
+{
     fn new(data:&[String])->Self
     {
         let mut nodes = HashMap::new();
@@ -101,6 +102,7 @@ impl World {
               send_h : 0 }
     }    
 
+    #[allow(unused)]
     fn add_receivers(&mut self)
     {        
         let mut keys = Vec::new();
@@ -109,87 +111,107 @@ impl World {
             keys.push(k.to_string());
         }
 
-        for n in keys
+        for name in keys.iter()
         {
-            for (l,n) in self.nodes.iter_mut()
-            {
-                n.add_receiver(l.to_string());
-                //self.nodes.get_mut(l.0).unwrap().add_receiver(n.to_string());
-            }
+        let des :Vec<String>=
+            self.nodes
+                .get(name)
+                .unwrap()
+                .list.clone();            
+            
+                for s in des.iter() 
+                {                        
+                    let nn = self.nodes
+                                            .get_mut(s);
+
+                    if nn.is_some()
+                    {
+                        self.nodes
+                        .get_mut(s)
+                        .unwrap()
+                        .add_receiver(name.to_string());
+                    }
+                }
         }
     }
 
-    fn click(&mut self)
+    fn reset(&mut self)
     {
-        //println!("{:?}",self.nodes);        
-        //let mut node = self.nodes.get_mut("button").unwrap();
+        for (_,n) in self.nodes.iter_mut()
+        {
+            n.pulse = false;
+        }
+    }
 
-        //let res = self.nodes.get_mut("broadcaster")
-        //                        .unwrap()
-        //                        .pulse("button".to_string(),false);
 
-        //self.send_l+=1;
-
-        let mut values = HashMap::new();
-
+    fn click(&mut self,values:&mut HashMap<String,bool>)
+    {
         let mut q = VecDeque::new();
-        q.push_back("button".to_string());
+        q.push_back(("button".to_string(),false));
 
         //let mut res = true;
 
         while !q.is_empty()
         {
-            let noder = q.pop_front();
+            let (node,pulse) = q.pop_front().unwrap();
 
-
-            if noder.is_some()
-            {
-                let node = noder.unwrap();
+            //if noder.is_some()
+            //{
+                //let node = noder.unwrap();
                 let connnections = self.nodes.get_mut(&node).unwrap().list.clone();
-                let pulse = self.nodes.get_mut(&node).unwrap().pulse;
-                
+
                 for c in connnections.iter()
                 {
-                  //  println!("[{}]",c);
+                    //let pulse = self.nodes.get_mut(&node).unwrap().pulse;
+                    //  println!("[{}]",c);
+                    
+                    if self.nodes.get(c).is_none()
+                    {
+                        let v = Node::new(c.to_string(),"".to_string(),'X');
+                        self.nodes.insert((*c).to_string(), v);
+                    }
 
                     if self.nodes.get(c).is_some()
                     {
+                        let cc = self.nodes.get_mut(c).unwrap();
+                        values.insert(c.to_string(),cc.pulse);
+
                         if pulse { self.send_h+=1; }
                             else { self.send_l+=1; }
 
-
-                        
-                        let cc = self.nodes.get_mut(c).unwrap();
-
                         let res = cc.send(node.to_string(),pulse,&values);
-                        values.insert(c.to_string(),cc.pulse);
 
+                        values.insert(c.to_string(),cc.pulse);
                                     
-                        if res { q.push_back(c.to_string());  }            
+                        if res.0 { q.push_back((c.to_string(),res.1)); }
                     }
                 }
-            }
+            //}
         }
-
-        //println!("click ended");
-        //println!("");
-
     }
 
     fn count(&mut self,times:usize)->usize
     {        
+        let mut values = HashMap::new();
+
+        self.add_receivers();
+
         for _ in 0..times
         {
-            //self.add_receivers();
-            self.click();
+            self.click(&mut values);
+            
+            //println!("");
+            
+            //for (n,v) in values.iter_mut()
+            //{            
+              //  values.insert(n.to_string(),false);
+            //}
         }
-        
-
-        //self.add_receivers();
+        //
         //self.click();
         //self.add_receivers();
         //self.click();
-
+        println!("");
         println!("send low :{}",self.send_l);
         println!("send high:{}",self.send_h);
 
@@ -198,7 +220,6 @@ impl World {
 
     fn count2(&mut self)->usize
     {
-        
         0
     }
 }
@@ -220,25 +241,11 @@ pub fn solve(data:&[String])
 {    
     println!("Day20");
     println!("part1:{}",part1(data));
-    println!("part2:{}",part2(data));
+   // println!("part2:{}",part2(data));
 }
 
 #[test]
 fn test1()
-{
-    let v = 
-    vec![
-        "broadcaster -> a, b, c".to_string(),
-        "%a -> b".to_string(),
-        "%b -> c".to_string(),
-        "%c -> inv".to_string(),
-        "&inv -> a".to_string(),
-    ];
-    assert_eq!(part1(&v),19114);
-}
-
-#[test]
-fn test2()
 {
     let v = vec![
         "broadcaster -> a, b, c".to_string(),
@@ -250,9 +257,8 @@ fn test2()
     assert_eq!(part1(&v),32000000);
 }
 
-
 #[test]
-fn test3()
+fn test2()
 {
     let v = vec![
         "broadcaster -> a".to_string(),
@@ -263,8 +269,7 @@ fn test3()
     ];
     assert_eq!(part1(&v),11687500);
 }
-
-
+/*
 #[test]
 fn test5()
 {
@@ -277,4 +282,4 @@ fn test5()
     ];
     assert_eq!(part2(&v),167409079868000);
 }
-
+*/
