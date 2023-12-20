@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::collections::VecDeque;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -8,7 +8,7 @@ struct Node
     list     : Vec<String>,
     command  : char,
     pulse    : bool,
-    reveived : HashMap<String,bool>
+    received : FxHashMap<String,bool>
 }
 
 impl Node
@@ -16,15 +16,15 @@ impl Node
     fn new(name:String,list:String,command:char)->Self
     {
         let nodes = list.split(", ").map(|s| s.to_string()).collect();
-        Self{name,list:nodes,command,pulse:false,reveived:HashMap::new()}
+        Self{name,list:nodes,command,pulse:false,received:FxHashMap::default()}
     }
 
     fn add_receiver(&mut self,receiver:String)
     {
-        self.reveived.insert(receiver,false);
+        self.received.insert(receiver,false);
     }
 
-    fn send(&mut self,val:bool,values:&HashMap<String,bool>)->(bool,bool)
+    fn send(&mut self,val:bool,values:&FxHashMap<String,bool>)->(bool,bool)
     {
         match self.command
         {
@@ -42,7 +42,7 @@ impl Node
             },
             '&' => 
             {
-                self.pulse = !self.reveived.keys().all(|n| *values.get(n).unwrap_or(&false));
+                self.pulse = !self.received.keys().all(|n| *values.get(n).unwrap_or(&false));
                 (true,self.pulse)    
             },
             'b' => 
@@ -65,17 +65,21 @@ impl Node
 
 struct World
 {
-    nodes  : HashMap<String,Node>,
+    nodes  : FxHashMap<String,Node>,
     send_l : usize,
     send_h : usize,
     done2  : bool,
+    mp     : bool,
+    qt     : bool,
+    qb     : bool,
+    ng     : bool,
 }
 
 impl World 
 {
     fn new(data:&[String])->Self
     {
-        let mut nodes = HashMap::new();
+        let mut nodes = FxHashMap::default();
 
         for line in data
         {
@@ -98,7 +102,12 @@ impl World
         Self{ nodes,
               send_l : 0,
               send_h : 0,
-              done2  : false }
+              done2  : false,
+              mp     : false,
+              qt     : false,
+              qb     : false,
+              ng     : false,
+             }
     }    
 
     #[allow(unused)]
@@ -142,7 +151,7 @@ impl World
         }
     }
 
-    fn click(&mut self,values:&mut HashMap<String,bool>)
+    fn click(&mut self,values:&mut FxHashMap<String,bool>)
     {
         let mut q = VecDeque::new();
         q.push_back(("button".to_string(),false));
@@ -150,8 +159,6 @@ impl World
         while !q.is_empty()
         {
             let (node,pulse) = q.pop_front().unwrap();
-
-            // if node=="mp" {break;}
 
             for c in self.nodes.get(&node).unwrap().list.clone().iter()
             {
@@ -164,12 +171,20 @@ impl World
                 if self.nodes.get(c).is_some()
                 {
                     let cc = self.nodes.get_mut(c).unwrap();
-                    //values.insert(c.to_string(),cc.pulse);
 
                     if pulse { self.send_h+=1; }
                         else { self.send_l+=1; }
 
                     let res = cc.send(pulse,values);
+
+                    
+                    if res.1
+                    {
+                        if cc.name=="mp" { self.mp = true; }
+                        if cc.name=="qt" { self.qt = true; }
+                        if cc.name=="qb" { self.qb = true; }
+                        if cc.name=="ng" { self.ng = true; }
+                    }
 
                     if !pulse && c=="rx"
                     {
@@ -184,14 +199,9 @@ impl World
         }
     }
 
-    //&mp
-    //&qt
-    //&qb
-    //&ng
-
     fn count(&mut self,times:usize)->usize
     {        
-        let mut values = HashMap::new();
+        let mut values = FxHashMap::default();
 
         self.add_receivers();
 
@@ -200,72 +210,53 @@ impl World
             self.click(&mut values);
         }
 
-
-        //println!("send low :{}",self.send_l);
-        //println!("send high:{}",self.send_h);
-
         self.send_h*self.send_l
     }
 
-    fn get_hash_vals(v:&HashMap<String,bool>)->String
+    fn get_hash_vals(v:&FxHashMap<String,bool>)->String
     {
         v.values().map(|b| if *b {'1'} else {'0'}).collect()
     }
 
     fn count2(&mut self)->usize
     {
-        let mut values = HashMap::new();
-
+        let mut values = FxHashMap::default();
         self.add_receivers();
 
-        //for _ in 0..times
+
         let mut times=1;
+
+        let mut mpv = 0;
+        let mut qtv = 0;
+        let mut qbv = 0;
+        let mut ngv = 0;
 
         loop
         {
             self.click(&mut values);
+
+            if self.mp && mpv==0 { mpv = times; }
+            if self.qt && qtv==0 { qtv = times; }
+            if self.qb && qbv==0 { qbv = times; }
+            if self.ng && ngv==0 { ngv = times; }
+
+            if self.mp && self.qt && self.qb && self.ng
+            {
+                return mpv * qtv * qbv * ngv;
+            }
 
             if self.done2
             {
                 return times;
             }
 
-            //if times>1_000_000
-            //{
-              //  return 0;
-            //}
-
             if times%1_000_000==0
             {
                 println!("{}={}",times,Self::get_hash_vals(&values));
             }
-            //get_hash_vals(
-
-            if *values.get("mp").unwrap_or(&false)
-            {
-                println!("mp:{}",times);
-            }
-            if *values.get("qt").unwrap_or(&false)
-            {
-                println!("qt:{}",times);
-            }
-            if *values.get("qb").unwrap_or(&false)
-            {
-                println!("qb:{}",times);
-            }
-            if *values.get("ng").unwrap_or(&false)
-            {
-                println!("ng:{}",times);
-            }
             
             times+=1;
         }
-
-
-        //println!("send low :{}",self.send_l);
-        //println!("send high:{}",self.send_h);
-
-        //self.send_h*self.send_l
     }
 }
 
@@ -331,18 +322,3 @@ fn test2()
     assert_eq!(part1(&v),11687500);
 }
 
-/*
-#[test]
-fn test3()
-{
-    let v = vec![
-        "broadcaster -> a, b, c".to_string(),
-        "%a -> b".to_string(),
-        "%b -> c".to_string(),
-        "%c -> inv".to_string(),
-        "&inv -> a".to_string(),
-    ];
-    assert_eq!(part2(&v),9999999999999999);
-}
-
- */
