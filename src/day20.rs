@@ -24,37 +24,41 @@ impl Node
         self.reveived.insert(receiver,false);
     }
 
-    fn send(&mut self,from:String,val:bool,values:&HashMap<String,bool>)->(bool,bool)
+    fn send(&mut self,val:bool,values:&HashMap<String,bool>)->(bool,bool)
     {
-        //println!("{} -{}-> {}",from.to_string(),if val {"high"} else {"low"},self.name);
-        
-        if self.command=='%'
+        match self.command
         {
-            if val
+            '%' => 
             {
-                return (false,false);
-            }
-              else 
+                if val
+                {
+                    (false,false)
+                }
+                  else 
+                {
+                    self.pulse = !self.pulse;
+                    (true,self.pulse)
+                }    
+            },
+            '&' => 
             {
-                self.pulse = !self.pulse;
-                return (true,self.pulse);
-            }
+                self.pulse = !self.reveived.keys().all(|n| *values.get(n).unwrap_or(&false));
+                (true,self.pulse)    
+            },
+            'b' => 
+            {
+                self.pulse = val;
+                (true,self.pulse)
+            },
+            'X' => 
+            {
+                (false,false)
+            },
+            _ => 
+            {
+                panic!("Unknown command:{}",self.command);
+            },
         }
-        else if self.command=='&' 
-        {
-            self.pulse = !self.reveived.keys().all(|n| *values.get(n).unwrap_or(&false));
-            return (true,self.pulse);
-        }
-        else if self.command=='b' 
-        {
-            self.pulse = val;
-            return (true,self.pulse);
-        }
-        else if self.command=='X' 
-        {
-            return (false,self.pulse);
-        }
-        panic!("Unknown command:{}",self.command);
     }
     
 }
@@ -143,49 +147,40 @@ impl World
         let mut q = VecDeque::new();
         q.push_back(("button".to_string(),false));
 
-        //let mut res = true;
-
         while !q.is_empty()
         {
             let (node,pulse) = q.pop_front().unwrap();
 
-            //if noder.is_some()
-            //{
-                //let node = noder.unwrap();
-                let connnections = self.nodes.get_mut(&node).unwrap().list.clone();
+            let connnections = self.nodes.get_mut(&node).unwrap().list.clone();
 
-                for c in connnections.iter()
+            for c in connnections.iter()
+            {
+                if self.nodes.get(c).is_none()
                 {
-                    //let pulse = self.nodes.get_mut(&node).unwrap().pulse;
-                    //  println!("[{}]",c);
-                    
-                    if self.nodes.get(c).is_none()
-                    {
-                        let v = Node::new(c.to_string(),"".to_string(),'X');
-                        self.nodes.insert((*c).to_string(), v);
-                    }
-
-                    if self.nodes.get(c).is_some()
-                    {
-                        let cc = self.nodes.get_mut(c).unwrap();
-                        values.insert(c.to_string(),cc.pulse);
-
-                        if pulse { self.send_h+=1; }
-                            else { self.send_l+=1; }
-
-                        let res = cc.send(node.to_string(),pulse,&values);
-
-                        if !pulse && c=="rx"
-                        {
-                            self.done2 = true;
-                        }
-
-                        values.insert(c.to_string(),cc.pulse);
-                                    
-                        if res.0 { q.push_back((c.to_string(),res.1)); }
-                    }
+                    let v = Node::new(c.to_string(),"".to_string(),'X');
+                    self.nodes.insert((*c).to_string(), v);
                 }
-            //}
+
+                if self.nodes.get(c).is_some()
+                {
+                    let cc = self.nodes.get_mut(c).unwrap();
+                    values.insert(c.to_string(),cc.pulse);
+
+                    if pulse { self.send_h+=1; }
+                        else { self.send_l+=1; }
+
+                    let res = cc.send(pulse,&values);
+
+                    if !pulse && c=="rx"
+                    {
+                        self.done2 = true;
+                    }
+
+                    values.insert(c.to_string(),cc.pulse);
+                                
+                    if res.0 { q.push_back((c.to_string(),res.1)); }
+                }
+            }
         }
     }
 
@@ -266,9 +261,9 @@ pub fn part2(data:&[String])->usize
 pub fn solve(data:&[String])
 {    
     println!("Day20");
-    //println!("part1:{}",part1(data));
+    println!("part1:{}",part1(data));
     //println!("part2:{}",part2(data));
-    compute()
+    //compute()
 }
 
 fn compute()
@@ -311,6 +306,7 @@ fn test2()
     assert_eq!(part1(&v),11687500);
 }
 
+/*
 #[test]
 fn test3()
 {
@@ -323,3 +319,5 @@ fn test3()
     ];
     assert_eq!(part2(&v),9999999999999999);
 }
+
+ */
