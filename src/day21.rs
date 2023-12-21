@@ -118,46 +118,95 @@ impl World
         //self.print();
         println!("pos={:?}",pos);
 
-        list.push_back((pos,1));
+        list.push_back(pos);
+
+        let mut hash:HashMap<Vec2,usize> = HashMap::new();
+        let mut hashn:HashMap<Vec2,usize> = HashMap::new();
+        hashn.insert(pos,1);
 
         
-
-        while !list.is_empty()
+        for s in 0..steps
         {
-            let (pos,step) = list.pop_front().unwrap();
+            hash = hashn.clone();
+            hashn.clear();
 
-            if step==steps { 
-                self.make_step(pos, step);
-                //self.hash.insert(pos,'O');
-             }
-            //println!("pos={:?},step={}",pos,step);
-            if step==steps+1
+            let moves = list.len();
+            for m in 0..moves
             {
-                //self.print();
-                //return self.res(steps);
+                let pos = list.pop_front().unwrap();
 
-                let code = 1<<(step+1);
-                return list.iter().filter(|(pos,cc)| self.c(*pos)!='#' && (cc & code==code)).count();
+                let val = *hash.get(&pos).unwrap_or(&0);
 
-                //return list.len();
-            }
-
-            for p in pos.around4()
-            {
-                if self.c(p)!='#'
+                if val>0 
                 {
-                    let code = 1<<(step+1);
-
-                    if self.s(p)&code==0
+                    for p in pos.around4()
                     {
-                        list.push_back((p,step+1));
-                    }
+                        if self.c(p)!='#'
+                        {
+                            let was = *hashn.get(&p).unwrap_or(&0);
+                            hashn.insert(p,was+val);
+                          //  println!("p={:?},val={},was={}",p,val,was);
+                            list.push_back(p);
+                        }
+                    }                        
                 }
             }
+            list = hashn.keys().map(|k| *k).collect();
         }
+        hashn.values().count()
 
-        panic!("err");
+        //panic!("err");
     }
+
+    fn calc2(&mut self,steps:usize)->usize
+    {
+        let mut list = VecDeque::new();
+        let pos = *self.hash.iter().find(|(_,c)| **c=='S').unwrap().0;
+        self.hash.insert(pos,'.');
+
+        //self.print();
+        println!("pos={:?}",pos);
+
+        list.push_back(pos);
+
+        let mut hash:HashMap<Vec2,usize> = HashMap::new();
+        let mut hashn:HashMap<Vec2,usize> = HashMap::new();
+        hashn.insert(pos,1);
+
+        
+        for s in 0..steps
+        {
+            hash = hashn.clone();
+            hashn.clear();
+
+            let moves = list.len();
+            for m in 0..moves
+            {
+                let pos = list.pop_front().unwrap();
+
+                let val = *hash.get(&pos).unwrap_or(&0);
+
+                if val>0 
+                {
+                    for p in pos.around4()
+                    {
+                        if self.c(p)!='#'
+                        {
+                            let was = *hashn.get(&p).unwrap_or(&0);
+                            hashn.insert(p,was+val);
+                          //  println!("p={:?},val={},was={}",p,val,was);
+                            list.push_back(p);
+                        }
+                    }                        
+                }
+            }
+            list = hashn.keys().map(|k| *k).collect();
+        }
+        hashn.values().count()
+
+        //panic!("err");
+    }
+
 }
 
 
@@ -174,9 +223,11 @@ pub fn part1(data:&[String],steps:usize)->usize
 
 pub fn part2(data:&[String])->usize
 {
+    let mut w  = World::new(data);
+    w.calc2(steps)
     //let r: Vec<&str> = data[0].split(',').collect();
     //count2(r)
-    0
+
 }
 
 #[allow(unused)]
