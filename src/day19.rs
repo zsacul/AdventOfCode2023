@@ -126,7 +126,8 @@ impl Xmas
         }
         panic!("eval");        
     }
-
+    
+    #[allow(clippy::ptr_arg)]
     fn eval_part(hash:&HashMap<String,Xmas>,name:String,val:&Vec<Range>)->usize
     {
              if name=="A" { val[0].sum()*
@@ -141,6 +142,7 @@ impl Xmas
         } 
     }
  
+    #[allow(clippy::ptr_arg)]
     fn eval2(&self,hash:&HashMap<String,Xmas>,vals:&Vec<Range>)->usize
     {
         let mut vals = vals.clone();
