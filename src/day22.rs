@@ -1,4 +1,4 @@
-use std::collections::{HashMap,HashSet};
+use std::collections::{HashMap,HashSet,VecDeque};
 
 
 #[derive(Eq, PartialEq, Debug, Clone,Hash)]
@@ -98,14 +98,14 @@ struct Brick
     z: Rangev,
     down: i32,
     l: i32,    
-    supported : HashSet<i32>
+    supp_by : HashSet<i32>
 }
 
 impl Brick {
     fn new(x:Rangev,y:Rangev,z:Rangev,l:i32)->Self
     {
         Self {
-            x,y,z,l,down:0,supported:HashSet::new()
+            x,y,z,l,down:0,supp_by:HashSet::new()
         }
     }
 
@@ -116,16 +116,21 @@ impl Brick {
     
     fn will_fall(&self,brick:i32)->bool
     {
-        //println!("is {}->[{:?}]",brick,self.supported);
-        self.supported.len()==1 && self.supported.contains(&brick)
+        //println!("is {}->[{:?}]",brick,self.supp_by);
+        self.supp_by.len()==0 || (self.supp_by.len()==1 && self.supp_by.contains(&brick))
     }
 
     fn add_support(&mut self,brick:i32)
     {
         if brick!=self.l
         {
-            self.supported.insert(brick);
+            self.supp_by.insert(brick);
         }
+    }    
+    
+    fn remove_support(&mut self,brick:i32)
+    {        
+         self.supp_by.remove(&brick);
     }
 
     fn voxels(&self,down:i32)->Vec<Voxel>
@@ -331,7 +336,7 @@ impl Space {
                     if id!=idl
                     {
                         self.bricks[id as usize].add_support(idl);
-                     //   println!("*** brick!! {} is supported by {:?}",Self::to_letter(id),Self::to_letter(idl));
+                     //   println!("*** brick!! {} is supp_by by {:?}",Self::to_letter(id),Self::to_letter(idl));
                     }
                 }
             }
@@ -416,9 +421,140 @@ impl Space {
         res
     }
 
+    fn calc_fallen(bricks:&mut Vec<Brick>)->usize
+    {
+        let mut res = bricks.len();
+
+        for l in 0..bricks.len()
+        {
+            //print!("brick {} ",l as i32);
+            //let id : usize = l as usize;//(l - b'A') as usize;
+
+            if bricks.iter().any(|b| b.will_fall(l as i32))
+            {
+                res-=1;
+               // println!("fall ");
+                //self.bricks.remove(id);
+            }
+              else 
+            {
+                //println!("OK ");                
+            }
+        }
+        res
+    }
+
     fn count2(&mut self)->usize
     {
-        0
+        for b in self.bricks.iter_mut()
+        {
+            b.render(&mut self.scr);
+        }
+
+        //self.print_xz();
+
+        while self.down() 
+        {
+        };
+
+        //self.print_xz();
+
+        self.find_support();
+
+        let mut res =0;
+        let s= self.bricks.len();
+
+        for l in 0..s
+        {
+            if !self.bricks
+                    .iter()
+                    .any(|b| b.will_fall(l as i32))
+            {
+                continue; //stable
+            }
+
+            let mut left : HashSet<usize> = (0..self.bricks.len()).collect();
+            let mut br = self.bricks.clone();
+
+            //for b in br.iter_mut()
+            //{
+              //  b.remove_support(l as i32);
+            //}
+            //let mut fallen = 0;
+
+            let mut to_check = VecDeque::new();
+            to_check.push_back(l as usize);
+
+            while !to_check.is_empty()
+            {
+                let id = to_check.pop_front().unwrap();
+
+                if !br.iter()
+                      .any(|b| b.will_fall(id as i32))
+                {
+                    continue; //stable
+                }                
+
+                let to_rem :Vec<_>= 
+                br.iter()
+                  .filter(|b| b.will_fall(id as i32))
+                  .map(|b| b.l)
+                  .collect();
+
+                if to_rem.len()==0
+                {
+                    continue;
+                }
+
+                for i in to_rem
+                {
+                    if left.contains(&(i as usize) )
+                    {
+                        left.remove(&(i as usize));
+    
+                        for b in br.iter_mut()
+                        {
+                            b.remove_support(id as i32);
+                        }   
+                        to_check.push_back(i as usize);  
+                    }
+
+                }
+
+                /*
+                for idn in br.clone()
+                        .iter_mut()
+                        .filter(|b| b.will_fall(id as i32))
+                        .map(|b|
+                            {                                
+                                b.remove_support(id as i32);
+                                b.l as usize
+                            })
+                {
+                    if left.contains(&idn)
+                    {
+                        println!("removed: {}",Self::to_letter(idn as i32) );
+                        left.remove(&idn);
+
+                        for br in br.iter_mut()
+                        {
+                            br.remove_support(id as i32);
+                        }
+                        to_check.push_back(idn as usize);
+                    }
+                    //fallen+=1;
+                }
+                 */
+                println!("{:?}",to_check);
+            }
+             
+            
+            let fallen = s - left.len();
+            //let fallen = Self::calc_fallen(&mut br);
+            println!("{} fallen {}",Self::to_letter(l as i32),fallen);
+            res+=fallen;
+        }
+        res
     }
 }
 
@@ -435,7 +571,9 @@ pub fn part1(data:&[String])->usize
 
 pub fn part2(data:&[String])->usize
 {
-    0
+    let mut w = Space::new();
+    w.fill(data);
+    w.count2()
 }
 
 #[allow(unused)]
@@ -470,7 +608,7 @@ fn test1()
 fn test2()
 {
     let v = get_test_data();
-    assert_eq!(part2(&v),281);
+    assert_eq!(part2(&v),7);
 }
 
 #[test]
