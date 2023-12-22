@@ -120,6 +120,12 @@ impl Brick {
         self.supp_by.len()==0 || (self.supp_by.len()==1 && self.supp_by.contains(&brick))
     }
 
+    fn will_fall2(&self,brick:i32)->bool
+    {
+        //println!("is {}->[{:?}]",brick,self.supp_by);
+        self.supp_by.len()==0
+    }
+
     fn add_support(&mut self,brick:i32)
     {
         if brick!=self.l
@@ -272,13 +278,8 @@ impl Space {
                 Rangev::new(a.z,b.z),
                 letter,
             );
-
             
             let vox = brick.voxels(0);
-            //for v in vox.iter()
-            //{
-              //  self.scr.insert(Voxel::new(v.x,v.y,v.z),letter );
-            //}
 
             self.dx.a = self.dx.a.min(vox.iter().map(|v| v.x).min().unwrap());
             self.dx.b = self.dx.b.max(vox.iter().map(|v| v.x).max().unwrap());
@@ -289,12 +290,6 @@ impl Space {
 
             self.bricks.push(brick);
         }
-
-        println!("SIZE XX {:?}",self.dx);
-        println!("SIZE YY {:?}",self.dy);
-        println!("SIZE ZZ {:?}",self.dz);
-
-        println!("{:?}",self.scr);
     }
 
     fn to_letter(v: i32)->char
@@ -314,20 +309,15 @@ impl Space {
 
     fn find_support(&mut self)
     {
-        self.print_xz();
-
         let it = self.bricks.clone();
         for brick in it.iter()
         {
-            println!("brick {} ",brick.l);
             let vox = brick.voxels(brick.down+1);
 
             for vv in vox
             {
                 let v = Voxel::new(vv.x,vv.y,vv.z);
-                
                 let c = *self.scr.get(&v).unwrap_or(&-1);
-                println!("{:?}->{}",v,c);
 
                 if c!=-1
                 {
@@ -336,10 +326,24 @@ impl Space {
                     if id!=idl
                     {
                         self.bricks[id as usize].add_support(idl);
-                     //   println!("*** brick!! {} is supp_by by {:?}",Self::to_letter(id),Self::to_letter(idl));
                     }
                 }
             }
+        }
+
+        for x in self.dx.span()
+        {
+            for y in self.dx.span()
+            {
+                let v = Voxel::new(x,y,1);
+
+                let c = *self.scr.get(&v).unwrap_or(&-1);
+                if c!=-1
+                {
+                    let id = c as i32;
+                    self.bricks[id as usize].add_support(999999);
+                }
+            }                
         }
     }    
 
@@ -382,40 +386,30 @@ impl Space {
 
     fn count(&mut self)->usize
     {
-        //let mut state = self.scr.clone();
-        //self.scr.clear();
-
         for b in self.bricks.iter_mut()
         {
             b.render(&mut self.scr);
         }
 
-        self.print_xz();
-
-        while self.down() 
-        {
-        };
-
-        self.print_xz();
-
+        while self.down() {};
 
         self.find_support();
         let mut res = self.bricks.len();
 
         for l in 0..self.bricks.len()
         {
-            print!("brick {} ",l as i32);
+            //print!("brick {} ",l as i32);
             let id : usize = l as usize;//(l - b'A') as usize;
 
             if self.bricks.iter().any(|b| b.will_fall(l as i32))
             {
                 res-=1;
-                println!("fall ");
+              //  println!("fall ");
                 //self.bricks.remove(id);
             }
               else 
             {
-                println!("OK ");                
+                //println!("OK ");                
             }
         }
         res
@@ -444,28 +438,25 @@ impl Space {
         res
     }
 
+//part2:70702
+//Elapsed: 214.37001 secs
+
     fn count2(&mut self)->usize
     {
         for b in self.bricks.iter_mut()
         {
             b.render(&mut self.scr);
         }
-
-        //self.print_xz();
-
-        while self.down() 
-        {
-        };
-
-        //self.print_xz();
+        while self.down() {};
 
         self.find_support();
 
         let mut res =0;
-        let s= self.bricks.len();
+        let all = self.bricks.len();
 
-        for l in 0..s
+        for l in 0..all
         {
+            //println!("prog: {}",l);
             if !self.bricks
                     .iter()
                     .any(|b| b.will_fall(l as i32))
@@ -476,91 +467,51 @@ impl Space {
             let mut left : HashSet<usize> = (0..self.bricks.len()).collect();
             let mut br = self.bricks.clone();
 
-            //for b in br.iter_mut()
-            //{
-              //  b.remove_support(l as i32);
-            //}
-            //let mut fallen = 0;
-
             let mut to_check = VecDeque::new();
             to_check.push_back(l as usize);
 
             while !to_check.is_empty()
             {
+                let to_rem : Vec<_>= to_check.iter()
+                                             .map(|d|*d as i32)
+                                             .collect();
                 let id = to_check.pop_front().unwrap();
 
                 if !br.iter()
                       .any(|b| b.will_fall(id as i32))
                 {
                     continue; //stable
-                }                
-
-                let to_rem :Vec<_>= 
-                br.iter()
-                  .filter(|b| b.will_fall(id as i32))
-                  .map(|b| b.l)
-                  .collect();
-
-                if to_rem.len()==0
-                {
-                    continue;
-                }
+                }             
 
                 for i in to_rem
                 {
-                    if left.contains(&(i as usize) )
+                    for b in br.iter_mut()
                     {
-                        left.remove(&(i as usize));
-    
-                        for b in br.iter_mut()
-                        {
-                            b.remove_support(id as i32);
-                        }   
-                        to_check.push_back(i as usize);  
-                    }
-
+                        b.remove_support(i);
+                    }   
                 }
 
-                /*
-                for idn in br.clone()
-                        .iter_mut()
-                        .filter(|b| b.will_fall(id as i32))
-                        .map(|b|
-                            {                                
-                                b.remove_support(id as i32);
-                                b.l as usize
-                            })
+                let to_add = br.iter()
+                               .filter(|b| b.will_fall2(id as i32))
+                               .map(|b| b.l as usize)
+                               .collect::<Vec<usize>>();
+
+                for i in to_add
                 {
-                    if left.contains(&idn)
+                    if left.contains(&i)
                     {
-                        println!("removed: {}",Self::to_letter(idn as i32) );
-                        left.remove(&idn);
-
-                        for br in br.iter_mut()
-                        {
-                            br.remove_support(id as i32);
-                        }
-                        to_check.push_back(idn as usize);
+                        left.remove(&i);   
+                        to_check.push_back(i);  
                     }
-                    //fallen+=1;
                 }
-                 */
-                println!("{:?}",to_check);
             }
-             
-            
-            let fallen = s - left.len();
-            //let fallen = Self::calc_fallen(&mut br);
-            println!("{} fallen {}",Self::to_letter(l as i32),fallen);
-            res+=fallen;
+
+            res+=all - left.len();
         }
         res
     }
 }
 
-// part1:1280 too high
-// part2:0
-// Elapsed: 770.70404 secs
 
 pub fn part1(data:&[String])->usize
 {
