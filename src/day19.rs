@@ -25,24 +25,6 @@ impl Range
         }
     }
 
-    fn new_one(a:usize)->Self
-    {
-        Self
-        {
-            a:a,b:a
-        }
-    }
-
-    fn in_range(&self,n:usize)->bool
-    {
-        n>=self.a && n<self.b
-    }
-
-    fn print(&self)
-    {
-        println!("{}-{} ",self.a,self.b);
-    }
-
     fn sum(&self)->usize
     {
         if self.b > self.a
@@ -54,33 +36,6 @@ impl Range
         }
     }
 
-    //let left  = vall[id].split(true ,num-1);
-    //let right = valr[id].split(false,num);
-
-    fn split(&mut self,greater:bool,val:usize)->bool
-    {
-        if self.a>=self.b { return false; }
-
-        if greater 
-        {
-            //  ----------
-            //      ^
-            //range > val
-            if self.b<=val { return false; }
-            if self.a>=val { return true;  }
-
-            self.a = val+1;
-        }
-          else 
-        {
-            if self.a> val { return false; }
-            if self.b<=val { return true;  }
-
-            self.b = val;
-        }
-        true
-    }
-
     // 0..10
     // > 5 grater = true
     // 6..10  - true
@@ -88,7 +43,7 @@ impl Range
     // < 5 grater = false
     // 0..5  - true
     // 5..10 - false
-    fn split2(&mut self,grater:bool,val:usize)->(Option<Range>,Option<Range>)
+    fn split2(&self,grater:bool,val:usize)->(Option<Range>,Option<Range>)
     {
         let mut r1 = self.clone();
         let mut r2 = self.clone();
@@ -121,11 +76,6 @@ impl Range
 
         }
 
-        //if self.a> val { return (None,Some(Range::new_one(self.a))); }
-        //if self.b<=val { return (Some(Range::new_one(self.b)),None); }
-        //r1.b = val;
-        //r2.a = val+1;
-
         (res1,res2)
     }
 
@@ -145,11 +95,6 @@ impl Xmas
             rules,
          }
     }    
-
-    fn print(&self)
-    {
-        println!("{:?}",self);
-    }
 
     fn eval1(&self,hash:&HashMap<String,Xmas>,vals:Vec<i32>)->usize
     {
@@ -182,48 +127,37 @@ impl Xmas
             else if r=="R" { return 0; }
             else
             {
-                //println!("[{}]",r);
                 return hash.get(r).unwrap().eval1(hash,vals);                
             }
-            
         }
-        //panic!("eval");
+        panic!("eval");
         0
     }
 
     fn eval_part(hash:&HashMap<String,Xmas>,name:String,val:&Vec<Range>)->usize
     {
-        println!("eval_part name:[{}]",name);
-        println!("eval_part vals:{:?}",val);
-        let mut res = 0;
-
-             if name=="A" { res+= val[0].sum()*
-                                  val[1].sum()*
-                                  val[2].sum()*
-                                  val[3].sum(); }
-        else if name=="R" { }
+             if name=="A" { val[0].sum()*
+                            val[1].sum()*
+                            val[2].sum()*
+                            val[3].sum() }
+        else if name=="R" { 0 }
         else
         {
-            let mut val = val.clone();
-            res+= hash.get(&name.to_string()).unwrap().eval2(hash, val);
+            let val = val.clone();
+            hash.get(&name.to_string()).unwrap().eval2(hash, val)
         } 
-        res
     }
  
     fn eval2(&self,hash:&HashMap<String,Xmas>,vals:Vec<Range>)->usize
     {
-        println!("eval2 name:{}",self.name);
-        println!("eval2 vals:{:?}",vals);
         let mut vals = vals.clone();
 
         let mut res = 0;
+
         for r in self.rules.iter()
         {
-            println!("rule: [{}]",r);
-
             if r.contains('<') || r.contains('>') 
             {
-                //let mut vals = vals_org.clone();
                 let run : Vec<&str> = r.split(':').collect();
                 let eq   = run[0];
                 let name = run[1];
@@ -235,50 +169,31 @@ impl Xmas
                 
                 let num = qqq[1].parse::<usize>().unwrap();
 
-                //if ( greater && vals[id] > num) ||
-                //   (!greater && vals[id] < num)
+                let (left,right) = vals[id].split2(greater ,num);
 
-                let mut vall = vals.clone();
-                let mut valr = vals.clone();
-                let left  = vall[id].split(true ,num-1);
-                let right = valr[id].split(false,num);
-
-                //println!("{:?}",vals);
-                //println!("{:?}",vall);
-                //println!("{:?}",valr);              
-
-                if greater && left
+                if left.is_some()
                 {
-                    res+=Self::eval_part(hash,name.to_string(),&vall);
+                    vals[id] = left.unwrap();
+                    res+=Self::eval_part(hash,name.to_string(),&vals);
                 }
 
-                if !greater && right
+                if right.is_some()
                 {
-                    res+=Self::eval_part(hash,name.to_string(),&valr);
+                    vals[id] = right.unwrap();
                 }
-
-                if greater
+                  else 
                 {
-                    vals = valr.clone();
-                }
-                else 
-                {                    
-                    vals = vall.clone();
+                    break;
                 }
             }
               else
             {
                 res+=Self::eval_part(hash,r.to_string(),&vals);
             }
- 
         }
 
-        //println!("eval2 name {} res:{}",self.name,res);
         res
-
     }    
-
-
 }
 
 struct World
@@ -314,8 +229,6 @@ impl World
 
     fn count(&mut self,s:String)->usize
     {   
-        let mut res = 0;
-
         for val in self.vals.iter()
         {
             let rule = tools::str_get_between(val.as_str(), "{","}");
@@ -333,27 +246,18 @@ impl World
 
             if rule.eval1(&self.hash,vv.clone())>0
             {
-                let v = self.acc.get(&rule.name.to_string()).unwrap_or(&usize::MAX);
-
                 if self.acc.get(&val.to_string()).is_none()
                 {
                     let s:usize =  vv.iter()                                
                                      .map(|n| *n as usize)
                                      .sum();
 
-                    //if s<*v
-                    //{
-                    // println!("{} {}",&rule.name.to_string(),s);
-                    //}
                     self.acc.insert(val.to_string(),s);
-                    //println!("{}:{}",rule.name,s);                      
                 }
             }
             
         }
-
-        println!(" {:?}",self.acc);
-        
+                
         self.acc.values().sum()
         //res
     }
@@ -439,41 +343,6 @@ fn test2()
     assert_eq!(part2(&d,&v),167409079868000);
 }
 
-fn get_ranges_single(v:&[usize])->Vec<Range>
-{
-    let mut res = vec![];
-    for i in 0..v.len()
-    {
-        res.push(Range::new(v[i],v[i]+1));
-    }
-    res
-}
-
-#[test]
-fn test3()
-{
-    let d = get_data();
-    let v = get_ranges_single(&[787,2655,1222,2876]);
-    assert_eq!(part2(&d,&v),7540);
-}
-
-#[test]
-fn test4()
-{
-    let d = get_data();
-    let v = get_ranges_single(&[2036,264,79,2244]);
-    assert_eq!(part2(&d,&v),4623);
-}
-
-#[test]
-fn test5()
-{
-    let d = get_data();
-    let v = get_ranges_single(&[2127,1623,2188,1013]);
-    assert_eq!(part2(&d,&v),6951);
-}
-
-
 // 0..10
 // > 5 grater = true
 // 6..10  - true
@@ -486,14 +355,12 @@ fn test5()
 fn test_range1()
 {
     let r = Range::new(0,10); //1..9
-    let mut r1 = r.clone();
-    let mut r2 = r.clone();
     
     //>5
-    let l1  = r1.split2(true ,5);
+    let l1  = r.split2(true ,5);
 
     //<5
-    let l2  = r2.split2(false,5);
+    let l2  = r.split2(false,5);
 
     assert_eq!(l1,(Some(Range { a: 6, b: 10 }), Some(Range { a: 0, b: 6 }))  );
     assert_eq!(l2,(Some(Range { a: 0, b: 5 }), Some(Range { a: 5, b: 10 }))  );
@@ -503,15 +370,13 @@ fn test_range1()
 fn test_range2()
 {
     let r = Range::new(0,10); //1..9
-    let mut r1 = r.clone();
-    let mut r2 = r.clone();
     
     //>5
-    let l1  = r1.split2(true ,0);
+    let l1  = r.split2(true ,0);
     assert_eq!(l1,(Some(Range { a: 1, b: 10 }), Some(Range { a: 0, b: 1  }))  );
 
     //<5
-    let l2  = r2.split2(false,0);
+    let l2  = r.split2(false,0);
     assert_eq!(l2,(None                       , Some(Range { a: 0, b: 10 }))  );
 }
 
@@ -519,14 +384,12 @@ fn test_range2()
 fn test_range3()
 {
     let r = Range::new(0,10); //1..9
-    let mut r1 = r.clone();
-    let mut r2 = r.clone();
     
     //>10
-    let l1  = r1.split2(true ,10);
+    let l1  = r.split2(true ,10);
     assert_eq!(l1,(None                       , Some(Range { a: 0, b: 10 }))  );
 
     //<10
-    let l2  = r2.split2(false,10);
+    let l2  = r.split2(false,10);
     assert_eq!(l2,(Some(Range { a: 0, b: 10 }), None                        ));
 }
