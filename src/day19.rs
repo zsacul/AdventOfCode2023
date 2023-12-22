@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap};
 use super::tools;
 
 #[derive(Debug, PartialEq, Eq,PartialOrd, Ord, Hash)]
@@ -54,6 +54,9 @@ impl Range
         }
     }
 
+    //let left  = vall[id].split(true ,num-1);
+    //let right = valr[id].split(false,num);
+
     fn split(&mut self,greater:bool,val:usize)->bool
     {
         if self.a>=self.b { return false; }
@@ -78,21 +81,44 @@ impl Range
         true
     }
 
-    fn split2(&mut self,val:usize)->(Option<Range>,Option<Range>)
+    // 0..10
+    // > 5 grater = true
+    // 6..10  - true
+    // 0..6   - false
+    // < 5 grater = false
+    // 0..5  - true
+    // 5..10 - false
+    fn split2(&mut self,grater:bool,val:usize)->(Option<Range>,Option<Range>)
     {
         let mut r1 = self.clone();
         let mut r2 = self.clone();
         let mut res1 : Option<Range> = None;
         let mut res2 : Option<Range> = None;
 
-             if val< self.a { res1=None;    }
-        else if val>=self.b { res1=Some(r1) }
-        else
+        if grater
+        {            
+                 if val< self.a { return (Some(r1), None    ); }
+            else if val>=self.b { return (None    , Some(r2)); }
+            else
+            {
+                r1.a = val+1;
+                r2.b = val+1;
+                res1 = Some(r1);
+                res2 = Some(r2);
+            }
+        }
+          else 
         {
-            r1.b = val;
-            r2.a = val;
-            res1 = Some(r1);
-            res2 = Some(r2);            
+                 if self.b<=val { return (Some(r1), None    ); }
+            else if self.a<val  { return (None    , Some(r2)); }
+            else
+            {
+                r1.b = val;
+                r2.a = val;
+                res1 = Some(r1);
+                res2 = Some(r2);
+            }
+
         }
 
         //if self.a> val { return (None,Some(Range::new_one(self.a))); }
@@ -167,7 +193,8 @@ impl Xmas
 
     fn eval_part(hash:&HashMap<String,Xmas>,name:String,val:&Vec<Range>)->usize
     {
-        //println!("eval_part name:{}",name);
+        println!("eval_part name:[{}]",name);
+        println!("eval_part vals:{:?}",val);
         let mut res = 0;
 
              if name=="A" { res+= val[0].sum()*
@@ -178,20 +205,22 @@ impl Xmas
         else
         {
             let mut val = val.clone();
-            res+= hash.get(&name.to_string()).unwrap().eval2(hash,&mut val);
+            res+= hash.get(&name.to_string()).unwrap().eval2(hash, val);
         } 
         res
     }
-
  
-    fn eval2(&self,hash:&HashMap<String,Xmas>,vals:&mut Vec<Range>)->usize
+    fn eval2(&self,hash:&HashMap<String,Xmas>,vals:Vec<Range>)->usize
     {
         println!("eval2 name:{}",self.name);
         println!("eval2 vals:{:?}",vals);
+        let mut vals = vals.clone();
 
         let mut res = 0;
         for r in self.rules.iter()
         {
+            println!("rule: [{}]",r);
+
             if r.contains('<') || r.contains('>') 
             {
                 //let mut vals = vals_org.clone();
@@ -227,22 +256,24 @@ impl Xmas
                 {
                     res+=Self::eval_part(hash,name.to_string(),&valr);
                 }
+
+                if greater
+                {
+                    vals = valr.clone();
+                }
+                else 
+                {                    
+                    vals = vall.clone();
+                }
             }
-            else
+              else
             {
                 res+=Self::eval_part(hash,r.to_string(),&vals);
             }
-            /*
-            else if r=="A" {  res += vals[0].sum()*vals[1].sum()*vals[2].sum()*vals[3].sum(); }
-            else if r=="R" {}// return 0; }
-            else
-            {
-                res+= hash.get(r).unwrap().eval2(hash,vals);
-            }
-            */
+ 
         }
 
-        println!("eval2 name {} res:{}",self.name,res);
+        //println!("eval2 name {} res:{}",self.name,res);
         res
 
     }    
@@ -329,10 +360,10 @@ impl World
 
     fn count2(&mut self,v:&Vec<Range>)->usize
     {
-        let mut vv = v.clone();
+        let vv = v.clone();
     
         let rule = self.hash.get("in").unwrap();
-        rule.eval2(&self.hash,&mut vv)           
+        rule.eval2(&self.hash,vv)           
     }    
 
 }
@@ -440,4 +471,33 @@ fn test5()
     let d = get_data();
     let v = get_ranges_single(&[2127,1623,2188,1013]);
     assert_eq!(part2(&d,&v),6951);
+}
+
+
+#[test]
+fn test_range1()
+{
+    // 0..10
+    // > 5 grater = true
+    // 6..10  - true
+    // 0..6   - false
+    // < 5 grater = false
+    // 0..5  - true
+    // 5..10 - false
+
+    let r = Range::new(0,10); //1..9
+    let mut r1 = r.clone();
+    let mut r2 = r.clone();
+    
+    //>5
+    let l1  = r1.split2(true ,5);
+
+    //>5
+    let l2  = r2.split2(false,5);
+
+    println!(" {:?}",l1);
+    println!(" {:?}",l2);
+    
+    assert_eq!(2,3);
+
 }
