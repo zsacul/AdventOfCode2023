@@ -1,3 +1,4 @@
+
 use std::collections::HashMap;
 use super::tools;
 
@@ -43,6 +44,7 @@ impl Range
     // < 5 grater = false
     // 0..5  - true
     // 5..10 - false
+    #[allow(clippy::collapsible_else_if)]
     fn split2(&self,grater:bool,val:usize)->(Option<Range>,Option<Range>)
     {
         let mut r1 = self.clone();
@@ -162,15 +164,15 @@ impl Xmas
 
                 let (left,right) = vals[id].split2(greater ,num);
 
-                if let Some(left) = left
+                if let Some(l) = left
                 {
-                    vals[id] = left;
+                    vals[id] = l;
                     res+=Self::eval_part(hash,name.to_string(),&vals);
                 }
 
-                if let Some(right) = right
+                if let Some(r) = right
                 {
-                    vals[id] = right;
+                    vals[id] = r;
                 }
                   else 
                 {
