@@ -1,3 +1,6 @@
+//part2:70702
+//Elapsed: 214.37001 secs
+
 use std::collections::{HashMap,HashSet,VecDeque};
 
 
@@ -16,15 +19,6 @@ impl Voxel
         Self 
         {
             x,y,z
-        }
-    }
-
-    fn from_v(v:&Voxel)->Self
-    {
-        Self {
-            x : v.x,
-            y : v.y,
-            z : v.z
         }
     }
 
@@ -66,24 +60,12 @@ impl Rangev
         }
     }
 
-    fn new_one(a:i32)->Self
-    {
-        Self
-        {
-            a:a,b:a
-        }
-    }
-
-    fn in_range(&self,n:i32)->bool
-    {
-        n>=self.a && n<=self.b
-    }
-
     fn span(&self)->std::ops::Range<i32>
     {
         self.a..self.b+1
     }
 
+    #[allow(unused)]
     fn print(&self)
     {
         println!("{}-{} ",self.a,self.b);
@@ -109,6 +91,7 @@ impl Brick {
         }
     }
 
+    #[allow(unused)]
     fn print(&self)
     {
         println!("{} {} {} {} ",self.x.a,self.y.a,self.z.a,self.l);
@@ -117,13 +100,12 @@ impl Brick {
     fn will_fall(&self,brick:i32)->bool
     {
         //println!("is {}->[{:?}]",brick,self.supp_by);
-        self.supp_by.len()==0 || (self.supp_by.len()==1 && self.supp_by.contains(&brick))
+        self.supp_by.is_empty() || (self.supp_by.len()==1 && self.supp_by.contains(&brick))
     }
 
-    fn will_fall2(&self,brick:i32)->bool
+    fn will_fall2(&self)->bool
     {
-        //println!("is {}->[{:?}]",brick,self.supp_by);
-        self.supp_by.len()==0
+        self.supp_by.is_empty()
     }
 
     fn add_support(&mut self,brick:i32)
@@ -157,13 +139,11 @@ impl Brick {
 
     fn free(&self,scr : &HashMap<Voxel,i32>,down : i32)->bool
     {
-        let v = self.voxels(self.down + down);
-
-        for v in v.iter()
+        for v in self.voxels(self.down + down).iter()
         {
             if v.z<1 { return false; }
 
-            let cc = *scr.get(&v).unwrap_or(&-1);
+            let cc = *scr.get(v).unwrap_or(&-1);
             if cc != -1 && cc != self.l
             {
                 return false;
@@ -215,6 +195,7 @@ impl Space {
         }
     }
 
+    #[allow(unused)]
     fn print_xz(&self)
     {
         println!("dx {:?}",self.dx);
@@ -244,19 +225,16 @@ impl Space {
                 {
                     print!(".");
                 }
-                else
-                {
-                    if c<24 
-                    {
-                        let lll = (b'A' + c as u8) as char;
-                        print!("{}",lll);
-                    }
-                    else 
-                    {
-                        print!("^");
-                    }
+                  else if c<24 
+                       {
+                           let lll = (b'A' + c as u8) as char;
+                           print!("{}",lll);
+                       }
+                         else 
+                       {
+                           print!("^");
+                       }
                 
-                }
             }   
             println!(" {}",z);
         }
@@ -292,6 +270,7 @@ impl Space {
         }
     }
 
+    #[allow(unused)]
     fn to_letter(v: i32)->char
     {
         if v<0        
@@ -304,7 +283,7 @@ impl Space {
             return '^';
         }        
 
-        return (b'A' + v as u8) as char;
+        (b'A' + v as u8) as char
     }
 
     fn find_support(&mut self)
@@ -321,11 +300,10 @@ impl Space {
 
                 if c!=-1
                 {
-                    let id = c as i32;
                     let idl  = brick.l;
-                    if id!=idl
+                    if c!=idl
                     {
-                        self.bricks[id as usize].add_support(idl);
+                        self.bricks[c as usize].add_support(idl);
                     }
                 }
             }
@@ -336,12 +314,11 @@ impl Space {
             for y in self.dx.span()
             {
                 let v = Voxel::new(x,y,1);
-
                 let c = *self.scr.get(&v).unwrap_or(&-1);
+
                 if c!=-1
                 {
-                    let id = c as i32;
-                    self.bricks[id as usize].add_support(999999);
+                    self.bricks[c as usize].add_support(999999);
                 }
             }                
         }
@@ -398,48 +375,14 @@ impl Space {
 
         for l in 0..self.bricks.len()
         {
-            //print!("brick {} ",l as i32);
-            let id : usize = l as usize;//(l - b'A') as usize;
-
             if self.bricks.iter().any(|b| b.will_fall(l as i32))
             {
                 res-=1;
-              //  println!("fall ");
-                //self.bricks.remove(id);
-            }
-              else 
-            {
-                //println!("OK ");                
             }
         }
         res
     }
 
-    fn calc_fallen(bricks:&mut Vec<Brick>)->usize
-    {
-        let mut res = bricks.len();
-
-        for l in 0..bricks.len()
-        {
-            //print!("brick {} ",l as i32);
-            //let id : usize = l as usize;//(l - b'A') as usize;
-
-            if bricks.iter().any(|b| b.will_fall(l as i32))
-            {
-                res-=1;
-               // println!("fall ");
-                //self.bricks.remove(id);
-            }
-              else 
-            {
-                //println!("OK ");                
-            }
-        }
-        res
-    }
-
-//part2:70702
-//Elapsed: 214.37001 secs
 
     fn count2(&mut self)->usize
     {
@@ -468,7 +411,7 @@ impl Space {
             let mut br = self.bricks.clone();
 
             let mut to_check = VecDeque::new();
-            to_check.push_back(l as usize);
+            to_check.push_back(l);
 
             while !to_check.is_empty()
             {
@@ -492,7 +435,7 @@ impl Space {
                 }
 
                 let to_add = br.iter()
-                               .filter(|b| b.will_fall2(id as i32))
+                               .filter(|b| b.will_fall2())
                                .map(|b| b.l as usize)
                                .collect::<Vec<usize>>();
 
@@ -535,6 +478,7 @@ pub fn solve(data:&[String])
     println!("part2:{}",part2(data));
 }
 
+#[allow(unused)]
 fn get_test_data()->Vec<String>
 {
     vec![
@@ -560,11 +504,4 @@ fn test2()
 {
     let v = get_test_data();
     assert_eq!(part2(&v),7);
-}
-
-#[test]
-fn test3()
-{
-    let v = get_test_data();
-    assert_eq!(part2(&v),83+79);
 }
