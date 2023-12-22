@@ -167,7 +167,7 @@ impl Xmas
 
     fn eval_part(hash:&HashMap<String,Xmas>,name:String,val:&Vec<Range>)->usize
     {
-        println!("eval_part name:{}",name);
+        //println!("eval_part name:{}",name);
         let mut res = 0;
 
              if name=="A" { res+= val[0].sum()*
@@ -211,14 +211,12 @@ impl Xmas
 
                 let mut vall = vals.clone();
                 let mut valr = vals.clone();
-                let left  = vall[id].split(true,num);
-                let right = valr[id].split(false,num-1);
+                let left  = vall[id].split(true ,num-1);
+                let right = valr[id].split(false,num);
 
-                println!("{:?}",vals);
-                println!("{:?}",vall);
-                println!("{:?}",valr);
-
-                
+                //println!("{:?}",vals);
+                //println!("{:?}",vall);
+                //println!("{:?}",valr);              
 
                 if greater && left
                 {
@@ -227,7 +225,7 @@ impl Xmas
 
                 if !greater && right
                 {
-                        res+=Self::eval_part(hash,name.to_string(),&valr);
+                    res+=Self::eval_part(hash,name.to_string(),&valr);
                 }
             }
             else
