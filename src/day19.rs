@@ -1,4 +1,4 @@
-use std::{collections::HashMap};
+use std::collections::HashMap;
 use super::tools;
 
 #[derive(Debug, PartialEq, Eq,PartialOrd, Ord, Hash)]
@@ -47,38 +47,30 @@ impl Range
     {
         let mut r1 = self.clone();
         let mut r2 = self.clone();
-        let mut res1 : Option<Range> = None;
-        let mut res2 : Option<Range> = None;
 
         if grater
         {            
-                 if val< self.a { return (Some(r1), None    ); }
-            else if val>=self.b { return (None    , Some(r2)); }
+                 if val< self.a { (Some(r1), None    ) }
+            else if val>=self.b { (None    , Some(r2)) }
             else
             {
                 r1.a = val+1;
                 r2.b = val+1;
-                res1 = Some(r1);
-                res2 = Some(r2);
+                (Some(r1),Some(r2))
             }
         }
           else 
         {
-                 if self.b<=val { return (Some(r1), None    ); }
-            else if self.a>=val { return (None    , Some(r2)); }
+                 if self.b<=val { (Some(r1), None    ) }
+            else if self.a>=val { (None    , Some(r2)) }
             else
             {
                 r1.b = val;
                 r2.a = val;
-                res1 = Some(r1);
-                res2 = Some(r2);
+                (Some(r1),Some(r2))
             }
-
         }
-
-        (res1,res2)
     }
-
 
 }
 
@@ -86,14 +78,14 @@ impl Xmas
 {
     fn new(s:String)->Self
     {
-        let tab   : Vec<&str>   = s.split("{").collect(); 
+        let tab   : Vec<&str>   = s.split('{').collect(); 
         let rule          = tools::str_get_between(s.as_str(), "{","}");
-        let rules : Vec<String> = rule.split(",").map(|s| s.to_string()).collect(); 
+        let rules : Vec<String> = rule.split(',').map(|s| s.to_string()).collect(); 
             
         Self { 
             name : tab[0].to_string(),
             rules,
-         }
+        }
     }    
 
     fn eval1(&self,hash:&HashMap<String,Xmas>,vals:Vec<i32>)->usize
@@ -130,8 +122,7 @@ impl Xmas
                 return hash.get(r).unwrap().eval1(hash,vals);                
             }
         }
-        panic!("eval");
-        0
+        panic!("eval");        
     }
 
     fn eval_part(hash:&HashMap<String,Xmas>,name:String,val:&Vec<Range>)->usize
@@ -144,11 +135,11 @@ impl Xmas
         else
         {
             let val = val.clone();
-            hash.get(&name.to_string()).unwrap().eval2(hash, val)
+            hash.get(&name.to_string()).unwrap().eval2(hash, &val)
         } 
     }
  
-    fn eval2(&self,hash:&HashMap<String,Xmas>,vals:Vec<Range>)->usize
+    fn eval2(&self,hash:&HashMap<String,Xmas>,vals:&Vec<Range>)->usize
     {
         let mut vals = vals.clone();
 
@@ -171,15 +162,15 @@ impl Xmas
 
                 let (left,right) = vals[id].split2(greater ,num);
 
-                if left.is_some()
+                if let Some(left) = left
                 {
-                    vals[id] = left.unwrap();
+                    vals[id] = left;
                     res+=Self::eval_part(hash,name.to_string(),&vals);
                 }
 
-                if right.is_some()
+                if let Some(right) = right
                 {
-                    vals[id] = right.unwrap();
+                    vals[id] = right;
                 }
                   else 
                 {
@@ -227,12 +218,12 @@ impl World
         }
     }
 
-    fn count(&mut self,s:String)->usize
+    fn count(&mut self)->usize
     {   
         for val in self.vals.iter()
         {
             let rule = tools::str_get_between(val.as_str(), "{","}");
-            let rules : Vec<&str> = rule.split(",").collect();
+            let rules : Vec<&str> = rule.split(',').collect();
             let mut vv = vec![];
 
             for r in rules.iter()
@@ -244,30 +235,24 @@ impl World
             
             let rule = self.hash.get("in").unwrap();
 
-            if rule.eval1(&self.hash,vv.clone())>0
+            if rule.eval1(&self.hash,vv.clone())>0 &&
+                self.acc.get(&val.to_string()).is_none()
             {
-                if self.acc.get(&val.to_string()).is_none()
-                {
-                    let s:usize =  vv.iter()                                
-                                     .map(|n| *n as usize)
-                                     .sum();
+                let s:usize = vv.iter()                                
+                                .map(|n| *n as usize)
+                                .sum();
 
-                    self.acc.insert(val.to_string(),s);
-                }
+                self.acc.insert(val.to_string(),s);
             }
-            
         }
                 
         self.acc.values().sum()
-        //res
     }
 
     fn count2(&mut self,v:&Vec<Range>)->usize
     {
-        let vv = v.clone();
-    
         let rule = self.hash.get("in").unwrap();
-        rule.eval2(&self.hash,vv)           
+        rule.eval2(&self.hash,v)
     }    
 
 }
@@ -275,13 +260,13 @@ impl World
 fn part1(data:&[String])->usize
 {
     let mut w = World::new(data);
-    w.count(w.vals[0].clone())
+    w.count()
 }
 
 fn part2(data:&[String],v:&Vec<Range>)->usize
 {
     let mut w = World::new(data);
-    w.count2(&v)
+    w.count2(v)
 }
 
 #[allow(unused)]
@@ -300,6 +285,7 @@ pub fn solve(data:&[String])
     println!("part2:{}",part2(data,&v));
 }
 
+#[allow(unused)]
 fn get_data()->Vec<String>
 {    
     vec![
