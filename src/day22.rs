@@ -1,8 +1,8 @@
+//Day22
+//part1:418
 //part2:70702
 //Elapsed: 214.37001 secs
-
 use std::collections::{HashMap,HashSet,VecDeque};
-
 
 #[derive(Eq, PartialEq, Debug, Clone,Hash)]
 struct Voxel
@@ -169,9 +169,6 @@ impl Brick {
             scr.insert(Voxel::new(v.x,v.y,v.z),-1 );
         }
     }
-
-
-
 }
 
 struct Space{
@@ -221,20 +218,7 @@ impl Space {
                     }
                 }
 
-                if c<0
-                {
-                    print!(".");
-                }
-                  else if c<24 
-                       {
-                           let lll = (b'A' + c as u8) as char;
-                           print!("{}",lll);
-                       }
-                         else 
-                       {
-                           print!("^");
-                       }
-                
+                print!("{}",Self::to_letter(c));               
             }   
             println!(" {}",z);
         }
@@ -349,13 +333,6 @@ impl Space {
 
                 return true;
             }
-
-            //if res {
-              //  println!("{}",id);
-                
-            //}
-
-            //render(&mut self.scr);
         }
         false
     }
@@ -382,7 +359,6 @@ impl Space {
         }
         res
     }
-
 
     fn count2(&mut self)->usize
     {
