@@ -110,7 +110,7 @@ impl Range
           else 
         {
                  if self.b<=val { return (Some(r1), None    ); }
-            else if self.a<val  { return (None    , Some(r2)); }
+            else if self.a>=val { return (None    , Some(r2)); }
             else
             {
                 r1.b = val;
@@ -474,17 +474,17 @@ fn test5()
 }
 
 
+// 0..10
+// > 5 grater = true
+// 6..10  - true
+// 0..6   - false
+// < 5 grater = false
+// 0..5  - true
+// 5..10 - false
+
 #[test]
 fn test_range1()
 {
-    // 0..10
-    // > 5 grater = true
-    // 6..10  - true
-    // 0..6   - false
-    // < 5 grater = false
-    // 0..5  - true
-    // 5..10 - false
-
     let r = Range::new(0,10); //1..9
     let mut r1 = r.clone();
     let mut r2 = r.clone();
@@ -492,12 +492,41 @@ fn test_range1()
     //>5
     let l1  = r1.split2(true ,5);
 
-    //>5
+    //<5
     let l2  = r2.split2(false,5);
 
-    println!(" {:?}",l1);
-    println!(" {:?}",l2);
-    
-    assert_eq!(2,3);
+    assert_eq!(l1,(Some(Range { a: 6, b: 10 }), Some(Range { a: 0, b: 6 }))  );
+    assert_eq!(l2,(Some(Range { a: 0, b: 5 }), Some(Range { a: 5, b: 10 }))  );
+}
 
+#[test]
+fn test_range2()
+{
+    let r = Range::new(0,10); //1..9
+    let mut r1 = r.clone();
+    let mut r2 = r.clone();
+    
+    //>5
+    let l1  = r1.split2(true ,0);
+    assert_eq!(l1,(Some(Range { a: 1, b: 10 }), Some(Range { a: 0, b: 1  }))  );
+
+    //<5
+    let l2  = r2.split2(false,0);
+    assert_eq!(l2,(None                       , Some(Range { a: 0, b: 10 }))  );
+}
+
+#[test]
+fn test_range3()
+{
+    let r = Range::new(0,10); //1..9
+    let mut r1 = r.clone();
+    let mut r2 = r.clone();
+    
+    //>10
+    let l1  = r1.split2(true ,10);
+    assert_eq!(l1,(None                       , Some(Range { a: 0, b: 10 }))  );
+
+    //<10
+    let l2  = r2.split2(false,10);
+    assert_eq!(l2,(Some(Range { a: 0, b: 10 }), None                        ));
 }
