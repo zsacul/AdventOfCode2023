@@ -14,54 +14,6 @@ enum Dirs {
     S = 3,    
 }
 
-impl Dirs {
-    fn left(&self)->Self
-    {
-        match self
-        {
-            Dirs::N => Dirs::W,
-            Dirs::E => Dirs::N,
-            Dirs::W => Dirs::S,
-            Dirs::S => Dirs::E,
-        }
-    }
-
-    fn right(&self)->Self
-    {
-        match self
-        {
-            Dirs::N => Dirs::E,
-            Dirs::E => Dirs::S,
-            Dirs::W => Dirs::N,
-            Dirs::S => Dirs::W,
-        }
-    }
-
-    fn go_from(&self,p : Vec2)->Vec2
-    {
-        match self
-        {
-            Dirs::N => Vec2::new(p.x  ,p.y-1),
-            Dirs::E => Vec2::new(p.x+1,p.y),
-            Dirs::W => Vec2::new(p.x-1,p.y),
-            Dirs::S => Vec2::new(p.x  ,p.y+1),
-        }
-    }
-
-    fn from_i32(d:i32)->Self
-    {
-        match d
-        {
-            0 => Dirs::N,
-            1 => Dirs::E,
-            2 => Dirs::W,
-            3 => Dirs::S,
-            _ => panic!(""),
-        }
-    }
-
-}
-
 #[derive(Debug)]
 struct World
 {
@@ -112,7 +64,7 @@ impl World
     {
         let dx = v[0].len() as i64;
         let dy =    v.len() as i64;
-        
+
         World 
         { 
             hash  : World::get_data(v,part2),
@@ -137,13 +89,12 @@ impl World
                 let c = *self.hash.get(&Vec2::new(x,y)).unwrap_or(&'.');
                 if c=='#'
                 {
-                    print!("{}",'■');
+                    print!("■");
                 }                
-                else
+                  else
                 {
                     print!("{}",c);
                 }
-                
             }
             println!();
         }
@@ -278,14 +229,12 @@ impl World
 
     fn calc(&mut self)->usize
     {
-        let mut res=0;
-        return self.go(self.start.0,self.start.1,1)-1;
+        self.go(self.start.0,self.start.1,1)-1
     }
 
     fn calc2(&mut self)->usize
     {
-        let mut res=0;
-        return self.go2(self.start.0,self.start.1,1)-1;
+        self.go2(self.start.0,self.start.1,1)-1
     }
 
 }
