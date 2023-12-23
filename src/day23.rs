@@ -1,6 +1,10 @@
-use std::collections::{HashMap,HashSet, VecDeque};
+use std::collections::HashMap;
 use super::vec2::Vec2;
-use super::tools;
+
+//Day23
+//part1:2178
+//part2:6486
+//Elapsed: 1706.8191 secs
 
 #[derive(Debug,Clone,Copy,PartialEq,Eq,Hash)]
 enum Dirs {
@@ -62,16 +66,16 @@ impl Dirs {
 struct World
 {
     hash    : HashMap<Vec2,char>,
-    steps   : HashMap<Vec2,u64>,
     dx      : i64,
     dy      : i64,
     start   : (Vec2,Dirs),
     end     : (Vec2,Dirs),
+    record  : usize,
 }
 
 impl World
 {
-    fn get_data(v:&[String])->HashMap<Vec2,char> 
+    fn get_data(v:&[String],part2:bool)->HashMap<Vec2,char> 
     {
         let mut hash = HashMap::new();
     
@@ -81,7 +85,11 @@ impl World
             {
                 let c= line.chars().nth(x).unwrap();
                 
-                //if c!='.'
+                if part2 && c!='#'
+                {
+                    hash.insert(Vec2::new(x as i64,y as i64),'.'); 
+                }
+                  else
                 {
                     hash.insert(Vec2::new(x as i64,y as i64),c); 
                 }
@@ -100,35 +108,19 @@ impl World
         self.hash.insert(p,c);
     }
 
-    fn s(&self,p:Vec2)->u64
-    {
-        *self.steps.get(&p).unwrap_or(&0)
-    }
-
-    fn make_step(&mut self,pos:Vec2,step:usize)
-    {
-        let v = self.steps.get(&pos).unwrap_or(&0);
-        self.steps.insert(pos,v | (1<<step));
-    }
-
-    fn res(&self,steps:usize)->usize
-    {
-        let code = 1<<steps;
-        self.steps.values().filter(|c| **c&code == code).count()
-    }
-
-    fn new(v:&[String])->World 
+    fn new(v:&[String],part2:bool)->World 
     {
         let dx = v[0].len() as i64;
         let dy =    v.len() as i64;
+        
         World 
         { 
-            hash  : World::get_data(v),
-            steps : HashMap::new(),
+            hash  : World::get_data(v,part2),
             dx    ,
             dy    ,
             start : (Vec2::new(   1,   0),Dirs::S),
             end   : (Vec2::new(dx-2,dy-1),Dirs::N),
+            record: 0,
         }    
     }
 
@@ -159,34 +151,18 @@ impl World
 
     fn go(&mut self,pos:Vec2,dir:Dirs,steps:usize)->usize
     {
-        if pos==self.end.0
-        {
-            println!("end!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            
-            return steps;
-        }
+        if pos==self.end.0 { return steps; }
 
         let c = self.c(pos);
-        //println!("pos={:?},dir={:?},steps={}  C=[{}]",pos,dir,steps,c);
-
-        
         self.set(pos,'X');
 
-        if steps>35
-        {
-
-            //self.print();
-        }
-        
+ 
         let res = 
         match c
         {
             '#' | 'X' => 0,
             '.' => 
             {
-                //for p in pos.around4()
-                
-                 
                  match dir {
                         Dirs::N => 
                         {
@@ -234,37 +210,28 @@ impl World
                 
     }
 
-
     fn go2(&mut self,pos:Vec2,dir:Dirs,steps:usize)->usize
     {
         if pos==self.end.0
         {
-            println!("end!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            if steps>self.record
+            {
+                self.record = steps;
+                println!("steps={}",steps-1);
+            }         
             
             return steps;
         }
 
         let c = self.c(pos);
-        //println!("pos={:?},dir={:?},steps={}  C=[{}]",pos,dir,steps,c);
-
-        
         self.set(pos,'X');
-
-        if steps>35
-        {
-
-            //self.print();
-        }
         
         let res = 
         match c
         {
             '#' | 'X' => 0,
-            '.'| '>' | '<' | 'v' => 
+            '.' => 
             {
-                //for p in pos.around4()
-                
-                 
                  match dir {
                         Dirs::N => 
                         {
@@ -301,9 +268,6 @@ impl World
                  }
                  
             },
-            //'>' =>  { self.go2(pos.r(),Dirs::E,steps+1) },
-            //'<' =>  { self.go2(pos.l(),Dirs::W,steps+1) },
-            //'v' =>  { self.go2(pos.b(),Dirs::S,steps+1) },
             _   =>  panic!("wrong char [{}]",c) ,
         };
 
@@ -311,102 +275,32 @@ impl World
         res
                 
     }
-    fn calc(&mut self,steps:usize)->usize
+
+    fn calc(&mut self)->usize
     {
         let mut res=0;
         return self.go(self.start.0,self.start.1,1)-1;
-
-        
-/*
-        let mut list = VecDeque::new();
-        let pos = *self.hash.iter().find(|(_,c)| **c=='S').unwrap().0;
-        self.hash.insert(pos,'.');
-
-        //self.print();
-        println!("pos={:?}",pos);
-
-        list.push_back(pos);
-
-        let mut hash:HashMap<Vec2,u128> = HashMap::new();
-        let mut hashn:HashMap<Vec2,u128> = HashMap::new();
-        hashn.insert(pos,1u128);
-
-        
-        for s in 0..steps
-        {
-            hash = hashn.clone();
-            hashn.clear();
-
-            let moves = list.len();
-            for m in 0..moves
-            {
-                let pos = list.pop_front().unwrap();
-
-                let val = *hash.get(&pos).unwrap_or(&0);
-
-                if val>0 
-                {
-                    for p in pos.around4()
-                    {
-                        if self.c(p)!='#'
-                        {
-                            let was = *hashn.get(&p).unwrap_or(&0);
-                            hashn.insert(p,was+val);
-                          //  println!("p={:?},val={},was={}",p,val,was);
-                            list.push_back(p);
-                        }
-                    }                        
-                }
-            }
-            list = hashn.keys().map(|k| *k).collect();
-        }
-        hashn.values().count()
- */
-        //panic!("err");
     }
 
-    fn calc2(&mut self,steps:usize)->usize
+    fn calc2(&mut self)->usize
     {
-        //let mut list = VecDeque::new();
         let mut res=0;
         return self.go2(self.start.0,self.start.1,1)-1;
-
-
-        
     }
-     
-
- 
 
 }
 
 
 pub fn part1(data:&[String])->usize
 {
-    let mut w  = World::new(data);
-    //w.calc(steps)
-    //w.print();
-    let res = w.calc(0);
-    //w.print();
-    res
-
-    
-
-    //let n = tools::i32_get_between(data[0], "(", ")");
-    //r.iter()
-    //.map(|s| hash(s))
-    //.sum() 
+    let mut w  = World::new(data,false);
+    w.calc()
 }
 
 pub fn part2(data:&[String])->usize
 {
-    let mut w  = World::new(data);
-    //w.calc(steps)
-    //w.print();
-    w.calc2(0)
-    //let mut w = Space::new();
-    //w.fill(data);
-    //w.count2()
+    let mut w  = World::new(data,true);
+    w.calc2()
 }
 
 #[allow(unused)]

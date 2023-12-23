@@ -1,5 +1,6 @@
 use timer::Timer;
 mod tools;
+use std::thread;
 mod dijkstria;
 //mod cycliclist;
 //mod cyclic2;
@@ -161,9 +162,12 @@ fn main() {
     */
     
     {
-        let _timer = Timer::new();
-        let day23_data  = tools::read_1d_string("data/day23.txt");
-        day23::solve(&day23_data);       
+        let child = thread::Builder::new().stack_size(32 * 1024 * 1024).spawn(move || { 
+            let _timer = Timer::new();
+            let day23_data  = tools::read_1d_string("data/day23.txt");
+            day23::solve(&day23_data);       
+             }).unwrap(); 
+             child.join().unwrap();
     }
     /*
     
