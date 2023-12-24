@@ -1,0 +1,527 @@
+//Day22
+//part1:418
+//part2:70702
+//Elapsed: 214.37001 secs
+use std::collections::{HashMap,HashSet,VecDeque};
+use super::vec2::Vec2;
+
+#[derive(Hash, Eq, PartialEq, Debug, Copy, Clone)]
+struct Vec3{
+    x: i64,
+    y: i64,
+    z: i64,
+}
+
+impl Vec3 {
+    fn new(fx:i64,fy:i64,fz:i64)->Vec3
+    {
+        Vec3{
+            x:fx,
+            y:fy,
+            z:fz,
+        }
+    }
+}
+
+#[derive(Eq, PartialEq, Debug, Clone,Hash)]
+struct Voxel
+{
+    x : i64,
+    y : i64,
+    z : i64,
+}
+
+
+impl Voxel 
+{
+    fn new(x:i64,y:i64,z:i64)->Self
+    {
+        Self 
+        {
+            x,y,z
+        }
+    }
+
+    fn from_str(v:&str)->Self
+    {
+        
+        let tab : Vec<&str> = v.split(", ").collect();
+        Self {
+            x : tab[0].trim().parse::<i64>().unwrap(),
+            y : tab[1].trim().parse::<i64>().unwrap(),
+            z : tab[2].trim().parse::<i64>().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq,PartialOrd, Ord,Clone, Copy)]
+struct Rangev
+{
+    a : i32,
+    b : i32
+}
+
+impl Rangev
+{
+    fn zero()->Self
+    {
+        Self
+        {
+            a : i32::MAX,
+            b : i32::MIN,
+        }
+    }
+
+    fn new(a:i32,b:i32)->Self
+    {
+        Self
+        {
+            a,b
+        }
+    }
+
+    fn span(&self)->std::ops::Range<i32>
+    {
+        self.a..self.b+1
+    }
+
+    #[allow(unused)]
+    fn print(&self)
+    {
+        println!("{}-{} ",self.a,self.b);
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+struct Brick
+{
+    pos: Voxel,
+    dir: Voxel,
+}
+
+impl Brick {
+    fn new(pos:Voxel,dir:Voxel)->Self
+    {
+        Self 
+        {
+            pos,  
+            dir,
+        }
+    }
+
+    #[allow(unused)]
+    fn print(&self)
+    {
+        println!("{} {} {}  {} {} {}",self.pos.x,self.pos.y,self.pos.z,self.dir.x,self.dir.y,self.dir.z);
+    }    
+}
+
+struct Space{
+    scr     : HashMap<Voxel,i32>,
+    pts     : Vec<Brick>,
+    dx      : Rangev,
+    dy      : Rangev,
+    dz      : Rangev,
+}
+
+impl Space {
+    fn new()->Self
+    {
+        Self 
+        {
+            scr     : HashMap::new(),
+            pts     : Vec::new(),
+            dx      : Rangev::zero(),
+            dy      : Rangev::zero(),
+            dz      : Rangev::zero(),
+        }
+    }
+
+
+    fn fill(&mut self,data:&[String])
+    {
+        for line in data
+        {
+            let pos = line.split(" @ ").collect::<Vec<&str>>();
+            let a = Voxel::from_str(pos[0]);
+            let b = Voxel::from_str(pos[1]);
+
+            let brick = Brick::new(a,b);
+            self.pts.push(brick);
+        }
+    }
+
+    #[allow(unused)]
+    fn to_letter(v: i32)->char
+    {
+        if v<0        
+        {
+            return '?';
+        }
+
+        if v>24
+        {
+            return '^';
+        }        
+
+        (b'A' + v as u8) as char
+    }
+  
+    fn intersect(&self,a1:Vec2,a2:Vec2,b1:Vec2,b2:Vec2)->(f64,f64)
+    {
+        let s1_x = a2.x as f64 - a1.x as f64;
+        let s1_y = a2.y as f64 - a1.y as f64;
+        let s2_x = b2.x as f64 - b1.x as f64;
+        let s2_y = b2.y as f64 - b1.y as f64;
+
+        let s = (-s1_y * (a1.x as f64 - b1.x as f64) + s1_x * (a1.y as f64 - b1.y as f64)) / (-s2_x * s1_y + s1_x * s2_y);
+        let t = ( s2_x * (a1.y as f64 - b1.y as f64) - s2_y * (a1.x as f64 - b1.x as f64)) / (-s2_x * s1_y + s1_x * s2_y);
+
+        if s >= 0.0 && s <= 1.0 && t >= 0.0 && t <= 1.0
+        {
+            let i_x = a1.x as f64 + (t * s1_x);
+            let i_y = a1.y as f64 + (t * s1_y);
+
+            return (i_x,i_y);
+        }
+
+        (-1.0,-1.0)
+    }
+
+    fn get_stone(x:i64,y:i64,z:i64,dx:i64,dy:i64,dz:i64)->(Vec3,Vec3)
+    {
+        let s= 2000000000000000i64;
+        let a = Vec3::new(x    ,y,z);
+        let b = Vec3::new(x+s*dx,y+s*dy,z+s*dz);
+        (a,b)
+    }
+
+
+  
+    fn intersect3d(a1:Vec3,a2:Vec3,b1:Vec3,b2:Vec3)->(f64,f64,f64)
+    {
+        let s1_x = a2.x as f64 - a1.x as f64;
+        let s1_y = a2.y as f64 - a1.y as f64;
+        let s1_z = a2.z as f64 - a1.z as f64;
+
+        let s2_x = b2.x as f64 - b1.x as f64;
+        let s2_y = b2.y as f64 - b1.y as f64;
+        let s2_z = b2.z as f64 - b1.z as f64;
+
+        let s = (-s1_y * (a1.x as f64 - b1.x as f64) + s1_x * (a1.y as f64 - b1.y as f64)) / (-s2_x * s1_y + s1_x * s2_y);
+        let t = ( s2_x * (a1.y as f64 - b1.y as f64) - s2_y * (a1.x as f64 - b1.x as f64)) / (-s2_x * s1_y + s1_x * s2_y);
+        
+
+        if s >= 0.0 && s <= 1.0 && t >= 0.0 && t <= 1.0 
+        {
+            let i_x = a1.x as f64 + (t * s1_x);
+            let i_y = a1.y as f64 + (t * s1_y);
+            let i_z = a1.z as f64 + (t * s1_z);
+
+            return (i_x,i_y,i_z);
+        }
+
+        (-1.0,-1.0,-1.0)
+    }
+    
+
+    fn count(&mut self)->usize
+    {
+        let mut res = 0;
+        for a in 0..self.pts.len()
+        {
+            for b in a+1..self.pts.len()
+            {
+                //self.pts[a].print();
+                //self.pts[b].print();
+
+                let p1 = Vec2::new(self.pts[a].pos.x as i64,self.pts[a].pos.y as i64);
+                let d1 = Vec2::new(self.pts[a].dir.x as i64,self.pts[a].dir.y as i64);
+                let p2 = Vec2::new(self.pts[b].pos.x as i64,self.pts[b].pos.y as i64);
+                let d2 = Vec2::new(self.pts[b].dir.x as i64,self.pts[b].dir.y as i64);
+
+                let sx = (200000000000000i64,400000000000000i64);
+                let sy = (200000000000000i64,400000000000000i64);
+
+
+                let s = 2000000000000000i64;
+                let a1 = p1;
+                let a2 = Vec2::new(p1.x + s*d1.x , p1.y + s*d1.y);
+                let b1 = p2;//Vec2::new(p2.x - s*d2.x , p2.y - s*d2.y);
+                let b2 = Vec2::new(p2.x + s*d2.x , p2.y + s*d2.y);
+                
+
+                let (fx,fy) = self.intersect(a1,a2,b1,b2);
+                
+                if fx>=sx.0 as f64 && fx<=sx.1 as f64 && fy>=sy.0 as f64 && fy<=sy.1 as f64
+                {
+                    res+=1;
+                }
+            }           
+        }
+        res
+
+    }
+
+    fn int(f:&f64)->bool
+    {
+        let i = *f as i64;
+        (i as f64 - *f).abs()<0.0001
+    }
+
+    fn try_throw(&mut self,a:usize,p:Vec3,d:Vec3)->bool
+    {
+        let stone = Self::get_stone(p.x, p.y, p.z, d.x, d.y, d.z);
+    
+        let i = 
+              self.pts
+              .iter()
+              .map(|l| 
+                  {
+                      let (b1,b2) = Self::get_stone(l.pos.x, l.pos.y, l.pos.z, 
+                                                                l.dir.x, l.dir.y, l.dir.z);
+                      Self::intersect3d(stone.0,stone.1,b1,b2)
+                  }
+              ).collect::<Vec<_>>();
+  
+        if i.iter().all(|(x,y,z)| !(*x==-1.0 && *y==-1.0 && *z==-1.0) && Self::int(x) && Self::int(y) && Self::int(z))
+        {
+            
+        }
+
+      //println!("{:?}",i);
+      //false
+      /*
+
+
+        for (id,p) in self.pts.iter().enumerate()
+        {
+            if id==a { continue; }
+
+            let pp = p.pos.clone();
+
+            let x = (pp.x - va.pos.x) as f64;
+            let y = (pp.y - va.pos.y) as f64;
+            let z = (pp.z - va.pos.z) as f64;
+
+           // println!("po {} {} {}",x,y,z);
+
+            let mut px = 0.0f64;
+            let mut py = 0.0f64;
+            let mut pz = 0.0f64;
+
+            px = x/dx; 
+            py = y/dy; 
+            pz = z/dz; 
+
+            let mut ipx = x;
+            let mut ipy = y;
+            let mut ipz = z;
+
+            //px>=0.0 && py>=0.0 && pz>=0.0 &&
+            if   (px-py).abs()<0.001 && (py-pz).abs()<0.001
+            {                
+               // println!("GOOOD {} {} {}",px,py,pz);
+                cnt+=1;
+                //return true;
+            }
+              else 
+            {
+               // println!("{} bad {} {} {}",cnt,px,py,pz);
+                return false;
+            }
+      }
+
+      return true;
+*/      
+    }
+
+    fn count2(&mut self)->i64
+    {
+        let xx = self.pts.iter().map(|x| x.pos.x).min().unwrap();
+        let yy = self.pts.iter().map(|x| x.pos.y).min().unwrap();
+        let zz = self.pts.iter().map(|x| x.pos.z).min().unwrap();
+        let xx2 = self.pts.iter().map(|x| x.pos.x).max().unwrap();
+        let yy2 = self.pts.iter().map(|x| x.pos.y).max().unwrap();
+        let zz2 = self.pts.iter().map(|x| x.pos.z).max().unwrap();
+
+        //self.pts.iter_mut().for_each(|v| { v.pos.z+=v.dir.x; 
+                                                       //v.pos.y+=v.dir.y; 
+                                                       //v.pos.z+=v.dir.z; });
+
+        //println!("{} {} {} ",xx,yy,zz);
+        //println!("{} {} {} ",xx2-xx,yy2-yy,zz2-zz);
+        
+        for a in 0..self.pts.len()
+        {
+                let s = 30;
+                let mut p = self.pts[a].pos.clone();
+                let off = self.pts[a].dir.clone();
+
+                for t in 0..s
+                {
+                    for z in -s..s
+                    {
+                        for y in -s..s
+                        {
+                            for x in -s..s
+                            {
+                                let pos = Vec3::new( p.x,p.y, p.z);
+                                let d = Vec3::new(x,y,z);
+
+                                if self.try_throw(a,pos,d)
+                                {
+                                    println!("Yes {:?} {:?}",p,d);
+                                    return (p.x-d.x +
+                                            p.y-d.y +
+                                            p.z-d.z) as i64;
+                                }
+                            }
+                        }                        
+                    }      
+
+                    p.x+=off.x;
+                    p.y+=off.y;
+                    p.z+=off.z;
+                }
+        }
+        0
+    }
+}
+
+
+pub fn part1(data:&[String])->usize
+{
+    let mut w = Space::new();
+    w.fill(data);
+    w.count()
+}
+
+pub fn part2(data:&[String])->i64
+{
+    let mut w = Space::new();
+    w.fill(data);
+    w.count2()
+}
+
+#[allow(unused)]
+pub fn solve(data:&[String])
+{    
+    println!("Day24");
+    println!("part1:{}",part1(data));
+    println!("part2:{}",part2(data));
+}
+
+#[allow(unused)]
+fn get_test_data()->Vec<String>
+{
+    vec![
+        "19, 13, 30 @ -2,  1, -2".to_string(),
+        "18, 19, 22 @ -1, -1, -2".to_string(),
+        "20, 25, 34 @ -2, -2, -4".to_string(),
+        "12, 31, 28 @ -1, -2, -1".to_string(),
+        "20, 19, 15 @  1, -5, -3".to_string(),
+    ]   
+}
+
+#[test]
+fn test1()
+{
+    let v = get_test_data();
+    assert_eq!(part1(&v),2);
+}
+
+#[test]
+fn test2()
+{
+    let v = get_test_data();
+    assert_eq!(part2(&v),47);
+}
+
+
+#[test]
+fn test_i1()
+{
+    let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
+    let (b1,b2) = Space::get_stone(20, 19, 15 , 1, -5, -2);
+    assert_eq!(Space::intersect3d(a1,a2,b1,b2),(21.0,14.0,12.0));
+}
+
+#[test]
+fn test_i2()
+{
+    let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
+    let (b1,b2) = Space::get_stone(12, 31, 28 ,-1, -2, -1);
+    assert_eq!(Space::intersect3d(a1,a2,b1,b2),(6.0, 19.0, 22.0));
+}
+
+#[allow(unused)]
+fn is_same(a:(f64,f64,f64),b:(f64,f64,f64))->bool
+{
+    const EPS : f64 = 0.0001;
+    if (a.0-b.0).abs()<EPS && (a.1-b.1).abs()<EPS && (a.2-b.2).abs()<EPS
+    {
+        return true;
+    
+    }
+    panic!("wrong");
+}
+
+#[test]
+fn test_i3()
+{
+    let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
+    let (b1,b2) = Space::get_stone(20, 25, 34 ,-2, -2, -4);
+    is_same(Space::intersect3d(a1,a2,b1,b2),(12.0, 17.0, 18.0));
+}
+
+
+#[test]
+fn test_i4()
+{
+    let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
+    let (b1,b2) = Space::get_stone(18, 19, 22 , -1, -1, -2);
+    is_same(Space::intersect3d(a1,a2,b1,b2),(15.0, 16.0, 16.0));
+}
+
+#[test]
+fn test_i5()
+{
+    let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
+    let (b1,b2) = Space::get_stone(19, 13, 30 , -2, 1, -2);
+    is_same(Space::intersect3d(a1,a2,b1,b2),(9.0, 18.0, 20.0));
+}
+
+
+#[test]
+fn test_try1()
+{
+    let data = get_test_data();
+    let mut w = Space::new();
+    w.fill(&data);
+
+    let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
+    assert_eq!(w.try_throw(0,a1,a2),true);
+    //w.count2()
+
+    //let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
+    //let (b1,b2) = Space::get_stone(19, 13, 30 , -2, 1, -2);
+    //is_same(Space::intersect3d(a1,a2,b1,b2),(9.0, 18.0, 20.0));
+}
+
+
+#[test]
+fn test_try2()
+{
+    let data = get_test_data();
+    let mut w = Space::new();
+    w.fill(&data);
+
+    let (a1,a2) = Space::get_stone(20, 15, 10 ,-1,  1,  2);
+    assert_eq!(w.try_throw(0,a1,a2),true);
+    //w.count2()
+
+    //let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
+    //let (b1,b2) = Space::get_stone(19, 13, 30 , -2, 1, -2);
+    //is_same(Space::intersect3d(a1,a2,b1,b2),(9.0, 18.0, 20.0));
+}
