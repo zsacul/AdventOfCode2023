@@ -366,7 +366,7 @@ impl Space {
         
         for a in 0..self.pts.len()
         {
-            let s = 30;
+            let s = 1300;
             let mut p = self.pts[a].pos.clone();
             let off   = self.pts[a].dir.clone();
 
@@ -375,24 +375,26 @@ impl Space {
             println!("{}/{}",a,self.pts.len());
 
             let timi = 5;
-            p.x-=off.x*(timi/2);
-            p.y-=off.y*(timi/2);
-            p.z-=off.z*(timi/2);
+            p.x-=off.x*2;//(timi/2);
+            p.y-=off.y*2;//(timi/2);
+            p.z-=off.z*2;//(timi/2);
+
+            let ix = vec![0,-1,1,-2,2,-3,3,-4,4,-5,5,-6,6,-7,7,-8,8,-9,9,-10,10,-11,11,-12,12,-13,13];
 
             for t in 0..s*timi
             {                
-                for z in -s..s
+                for z in ix.iter()
                 {
-                    for y in -s..s
+                    for y in ix.iter()
                     {
-                        for x in -s..s
+                        for x in ix.iter()
                         {
-                            if x==0 && y==0 && z==0
+                            if *x==0 && *y==0 && *z==0
                             {
                                 continue;
                             }
                             let pos = Vec3::new(p.x-x,p.y-y, p.z-z);
-                            let d   = Vec3::new(    x,    y,     z);
+                            let d   = Vec3::new(   *x,   *y,    *z);
 
                             if self.try_throw(a,pos,d)
                             {
@@ -448,8 +450,8 @@ pub fn solve(data:&[String])
 {    
     println!("Day24");
     println!("part1:{}",part1(data));
-    //println!("part2:{}",part2(data));
-    partt(data);
+    println!("part2:{}",part2(data));
+    //partt(data);
 }
 
 #[allow(unused)]

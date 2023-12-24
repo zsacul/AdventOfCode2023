@@ -4,8 +4,6 @@ use std::collections::{HashMap,HashSet, VecDeque};
 
 use super::vec2::Vec2;
 
-//use std::{thread, time};
-
 #[derive(Debug)]
 struct World
 {
