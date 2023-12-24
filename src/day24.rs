@@ -13,12 +13,11 @@ struct Vec3{
 }
 
 impl Vec3 {
-    fn new(fx:i64,fy:i64,fz:i64)->Vec3
+    fn new(x:i64,y:i64,z:i64)->Vec3
     {
-        Vec3{
-            x:fx,
-            y:fy,
-            z:fz,
+        Vec3
+        {
+            x,y,z
         }
     }
 }
@@ -30,7 +29,6 @@ struct Voxel
     y : i64,
     z : i64,
 }
-
 
 impl Voxel 
 {
@@ -51,44 +49,6 @@ impl Voxel
             y : tab[1].trim().parse::<i64>().unwrap(),
             z : tab[2].trim().parse::<i64>().unwrap(),
         }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq,PartialOrd, Ord,Clone, Copy)]
-struct Rangev
-{
-    a : i32,
-    b : i32
-}
-
-impl Rangev
-{
-    fn zero()->Self
-    {
-        Self
-        {
-            a : i32::MAX,
-            b : i32::MIN,
-        }
-    }
-
-    fn new(a:i32,b:i32)->Self
-    {
-        Self
-        {
-            a,b
-        }
-    }
-
-    fn span(&self)->std::ops::Range<i32>
-    {
-        self.a..self.b+1
-    }
-
-    #[allow(unused)]
-    fn print(&self)
-    {
-        println!("{}-{} ",self.a,self.b);
     }
 }
 
@@ -116,12 +76,9 @@ impl Brick {
     }    
 }
 
-struct Space{
-    scr     : HashMap<Voxel,i32>,
+struct Space
+{  
     pts     : Vec<Brick>,
-    dx      : Rangev,
-    dy      : Rangev,
-    dz      : Rangev,
 }
 
 impl Space {
@@ -129,14 +86,9 @@ impl Space {
     {
         Self 
         {
-            scr     : HashMap::new(),
-            pts     : Vec::new(),
-            dx      : Rangev::zero(),
-            dy      : Rangev::zero(),
-            dz      : Rangev::zero(),
+             pts     : Vec::new(),
         }
     }
-
 
     fn fill(&mut self,data:&[String])
     {
@@ -151,27 +103,19 @@ impl Space {
         }
     }
 
-    #[allow(unused)]
-    fn to_letter(v: i32)->char
-    {
-        if v<0        
-        {
-            return '?';
-        }
-
-        if v>24
-        {
-            return '^';
-        }        
-
-        (b'A' + v as u8) as char
-    }
 
     fn get_stone(x:i64,y:i64,z:i64,dx:i64,dy:i64,dz:i64)->(Vec3,Vec3)
     {
         let s= 2000000000000000i64;
         let a = Vec3::new(x    ,y,z);
         let b = Vec3::new(x+s*dx,y+s*dy,z+s*dz);
+        (a,b)
+    }
+
+    fn get_stone_raw(x:i64,y:i64,z:i64,dx:i64,dy:i64,dz:i64)->(Vec3,Vec3)
+    {        
+        let a = Vec3::new(x    ,y,z);
+        let b = Vec3::new(dx,dy,dz);
         (a,b)
     }
   
@@ -204,7 +148,7 @@ impl Space {
 
         let s2_x = b2.x as f64 - b1.x as f64;
         let s2_y = b2.y as f64 - b1.y as f64;
-        let s2_z = b2.z as f64 - b1.z as f64;
+        //let s2_z = b2.z as f64 - b1.z as f64;
 
         let s = (-s1_y * (a1.x as f64 - b1.x as f64) + s1_x * (a1.y as f64 - b1.y as f64)) / (-s2_x * s1_y + s1_x * s2_y);
         let t = ( s2_x * (a1.y as f64 - b1.y as f64) - s2_y * (a1.x as f64 - b1.x as f64)) / (-s2_x * s1_y + s1_x * s2_y);
@@ -240,7 +184,6 @@ impl Space {
                 let sx = (200000000000000i64,400000000000000i64);
                 let sy = (200000000000000i64,400000000000000i64);
 
-
                 let s = 2000000000000000i64;
                 let a1 = p1;
                 let a2 = Vec2::new(p1.x + s*d1.x , p1.y + s*d1.y);
@@ -260,35 +203,52 @@ impl Space {
 
     }
 
-    fn int(f:&f64)->bool
+    fn int(f:f64)->bool
     {
-        let i = *f as i64;
-        (i as f64 - *f).abs()<0.00001
+        let i = (f+0.5) as i64;
+        //let ii = ((i as f64) - f).abs();
+        //println!("ii={} ",ii);
+        ((i as f64) - f).abs()<0.001
     }
 
     fn try_throw(&mut self,a:usize,p:Vec3,d:Vec3)->bool
     {
-            let stone = Self::get_stone(p.x, p.y, p.z, d.x, d.y, d.z);
+        let st = Self::get_stone(0,0,0, d.x, d.y, d.z);
+        let stone = Self::get_stone(p.x, p.y, p.z, d.x, d.y, d.z);
 
             self.pts
-            .iter()
-            .map(|l| 
+            .iter().enumerate()
+            .map(|(id,l)| 
                 {
                     let (b1,b2) = Self::get_stone(l.pos.x, l.pos.y, l.pos.z, 
                                                             l.dir.x, l.dir.y, l.dir.z);
-                    Self::intersect3d(stone.0,stone.1,b1,b2)
+                    (id,Self::intersect3d(stone.0,stone.1,b1,b2))
                 }
             ).all(
-            |(x,y,z)|
+            |(id,(x,y,z))|
             {
-                if x==-1.0 && y==-1.0 && z==-1.0 { return false;}
-                if !(Self::int(&x) && Self::int(&y) && Self::int(&z)) { return false;}
+                //println!("{} {} {} {} {} {} {} {} {} {}",id,x,y,z,p.x,p.y,p.z,d.x,d.y,d.z);
+                if id==a { return true; }
 
-                let dx = (x - p.x as f64);
-                let dy = (y - p.y as f64);
-                let dz = (z - p.z as f64);
+                if x==-1.0 && y==-1.0 && z==-1.0 
+                {
+                    return false;
+                }
+                if !(Self::int(x) && Self::int(y) && Self::int(z))                 
+                { 
+                    //if !Self::int(x) {println!("not int x:{}",x); }
+                    //if !Self::int(y) {println!("not int y:{}",y); }
+                    //if !Self::int(z) {println!("not int z:{}",z); }
+                    
+                    return false;
+                }
+
+                let dx = x - p.x as f64;
+                let dy = y - p.y as f64;
+                let dz = z - p.z as f64;
 
                 let mut t = -1.0;
+
                 if dx.abs() > dy.abs()
                 {
                     if dx.abs() > dz.abs()
@@ -312,11 +272,22 @@ impl Space {
                     }
                 }
 
-                if t>0.0 && t<=1.0   
+                if t>=0.0 && t<=1.0   
                 {
-                    let m = t*2000000000000000.0f64;
-                    return Self::int(&m);
+                    //println!("dupa t:{} ",t);
+                    let tx = t*(st.1.x as f64);
+                    let ty = t*(st.1.y as f64);
+                    let tz = t*(st.1.z as f64);
+
+                    return Self::int(tx) &&
+                           Self::int(ty) &&
+                           Self::int(tz);
+
+                    //return true;
+                    //let m = t*2000000000000000.0f64;
+                    //return Self::int(&m);
                 }
+
                 false
             }
             )
@@ -379,31 +350,37 @@ impl Space {
 
     fn count2(&mut self)->i64
     {
-        let xx = self.pts.iter().map(|x| x.pos.x).min().unwrap();
-        let yy = self.pts.iter().map(|x| x.pos.y).min().unwrap();
-        let zz = self.pts.iter().map(|x| x.pos.z).min().unwrap();
+        let xx  = self.pts.iter().map(|x| x.pos.x).min().unwrap();
+        let yy  = self.pts.iter().map(|x| x.pos.y).min().unwrap();
+        let zz  = self.pts.iter().map(|x| x.pos.z).min().unwrap();
         let xx2 = self.pts.iter().map(|x| x.pos.x).max().unwrap();
         let yy2 = self.pts.iter().map(|x| x.pos.y).max().unwrap();
         let zz2 = self.pts.iter().map(|x| x.pos.z).max().unwrap();
 
         //self.pts.iter_mut().for_each(|v| { v.pos.z+=v.dir.x; 
-                                            //v.pos.y+=v.dir.y; 
-                                            //v.pos.z+=v.dir.z; });
+                                          // v.pos.y+=v.dir.y; 
+                                          // v.pos.z+=v.dir.z; });
 
         //println!("{} {} {} ",xx,yy,zz);
         //println!("{} {} {} ",xx2-xx,yy2-yy,zz2-zz);
         
         for a in 0..self.pts.len()
         {
-            let s = 15;
+            let s = 30;
             let mut p = self.pts[a].pos.clone();
-            let off = self.pts[a].dir.clone();
+            let off   = self.pts[a].dir.clone();
+
+          //  println!("{:?} {:?}",p,off);
 
             println!("{}/{}",a,self.pts.len());
 
-            for t in 0..s*10
-            {
-                
+            let timi = 5;
+            p.x-=off.x*(timi/2);
+            p.y-=off.y*(timi/2);
+            p.z-=off.z*(timi/2);
+
+            for t in 0..s*timi
+            {                
                 for z in -s..s
                 {
                     for y in -s..s
@@ -415,7 +392,7 @@ impl Space {
                                 continue;
                             }
                             let pos = Vec3::new(p.x-x,p.y-y, p.z-z);
-                            let d   = Vec3::new(  x,  y,   z);
+                            let d   = Vec3::new(    x,    y,     z);
 
                             if self.try_throw(a,pos,d)
                             {
@@ -423,7 +400,7 @@ impl Space {
                                 let ry = p.y - d.y;
                                 let rz = p.z - d.z;
 
-                                if pos.x==24
+                                //if pos.x==24
                                 //if d.x==-3 && d.y==1
                                 {
                                     println!("Yes {},{},{} {:?} = {}",pos.x,pos.y,pos.z,d,pos.x+pos.y+pos.z);
@@ -444,17 +421,25 @@ impl Space {
 }
 
 
-pub fn part1(data:&[String])->usize
+fn part1(data:&[String])->usize
 {
     let mut w = Space::new();
     w.fill(data);
     w.count()
 }
 
-pub fn part2(data:&[String])->i64
+fn part2(data:&[String])->i64
 {
     let mut w = Space::new();
     w.fill(data);
+    w.count2()
+}
+
+fn partt(data:&[String])->i64
+{
+    let v = get_test_data();
+    let mut w = Space::new();
+    w.fill(&v);
     w.count2()
 }
 
@@ -463,7 +448,8 @@ pub fn solve(data:&[String])
 {    
     println!("Day24");
     println!("part1:{}",part1(data));
-    println!("part2:{}",part2(data));
+    //println!("part2:{}",part2(data));
+    partt(data);
 }
 
 #[allow(unused)]
@@ -554,8 +540,8 @@ fn test_try1()
     let mut w = Space::new();
     w.fill(&data);
 
-    let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
-    assert_eq!(w.try_throw(0,a1,a2),true);
+    let (a1,a2) = Space::get_stone_raw(24, 13, 10 ,-3,  1,  2);
+    assert_eq!(w.try_throw(4,a1,a2),true);
     //w.count2()
 
     //let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
@@ -572,7 +558,7 @@ fn test_try2()
     w.fill(&data);
 
     let (a1,a2) = Space::get_stone(20, 15, 10 ,-1,  1,  2);
-    assert_eq!(w.try_throw(0,a1,a2),true);
+    assert_eq!(w.try_throw(4,a1,a2),false);
     //w.count2()
 
     //let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
