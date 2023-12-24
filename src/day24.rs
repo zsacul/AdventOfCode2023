@@ -166,6 +166,14 @@ impl Space {
 
         (b'A' + v as u8) as char
     }
+
+    fn get_stone(x:i64,y:i64,z:i64,dx:i64,dy:i64,dz:i64)->(Vec3,Vec3)
+    {
+        let s= 2000000000000000i64;
+        let a = Vec3::new(x    ,y,z);
+        let b = Vec3::new(x+s*dx,y+s*dy,z+s*dz);
+        (a,b)
+    }
   
     fn intersect(&self,a1:Vec2,a2:Vec2,b1:Vec2,b2:Vec2)->(f64,f64)
     {
@@ -187,17 +195,7 @@ impl Space {
 
         (-1.0,-1.0)
     }
-
-    fn get_stone(x:i64,y:i64,z:i64,dx:i64,dy:i64,dz:i64)->(Vec3,Vec3)
-    {
-        let s= 2000000000000000i64;
-        let a = Vec3::new(x    ,y,z);
-        let b = Vec3::new(x+s*dx,y+s*dy,z+s*dz);
-        (a,b)
-    }
-
-
-  
+ 
     fn intersect3d(a1:Vec3,a2:Vec3,b1:Vec3,b2:Vec3)->(f64,f64,f64)
     {
         let s1_x = a2.x as f64 - a1.x as f64;
@@ -210,7 +208,6 @@ impl Space {
 
         let s = (-s1_y * (a1.x as f64 - b1.x as f64) + s1_x * (a1.y as f64 - b1.y as f64)) / (-s2_x * s1_y + s1_x * s2_y);
         let t = ( s2_x * (a1.y as f64 - b1.y as f64) - s2_y * (a1.x as f64 - b1.x as f64)) / (-s2_x * s1_y + s1_x * s2_y);
-        
 
         if s >= 0.0 && s <= 1.0 && t >= 0.0 && t <= 1.0 
         {
@@ -266,71 +263,115 @@ impl Space {
     fn int(f:&f64)->bool
     {
         let i = *f as i64;
-        (i as f64 - *f).abs()<0.0001
+        (i as f64 - *f).abs()<0.00001
     }
 
     fn try_throw(&mut self,a:usize,p:Vec3,d:Vec3)->bool
     {
-        let stone = Self::get_stone(p.x, p.y, p.z, d.x, d.y, d.z);
-    
-        let i = 
-              self.pts
-              .iter()
-              .map(|l| 
-                  {
-                      let (b1,b2) = Self::get_stone(l.pos.x, l.pos.y, l.pos.z, 
-                                                                l.dir.x, l.dir.y, l.dir.z);
-                      Self::intersect3d(stone.0,stone.1,b1,b2)
-                  }
-              ).collect::<Vec<_>>();
-  
-        if i.iter().all(|(x,y,z)| !(*x==-1.0 && *y==-1.0 && *z==-1.0) && Self::int(x) && Self::int(y) && Self::int(z))
-        {
-            
-        }
+            let stone = Self::get_stone(p.x, p.y, p.z, d.x, d.y, d.z);
 
+            self.pts
+            .iter()
+            .map(|l| 
+                {
+                    let (b1,b2) = Self::get_stone(l.pos.x, l.pos.y, l.pos.z, 
+                                                            l.dir.x, l.dir.y, l.dir.z);
+                    Self::intersect3d(stone.0,stone.1,b1,b2)
+                }
+            ).all(
+            |(x,y,z)|
+            {
+                if x==-1.0 && y==-1.0 && z==-1.0 { return false;}
+                if !(Self::int(&x) && Self::int(&y) && Self::int(&z)) { return false;}
+
+                let dx = (x - p.x as f64);
+                let dy = (y - p.y as f64);
+                let dz = (z - p.z as f64);
+
+                let mut t = -1.0;
+                if dx.abs() > dy.abs()
+                {
+                    if dx.abs() > dz.abs()
+                    {
+                        t = (x-p.x as f64)/dx;
+                    }
+                        else
+                    {
+                        t = (z-p.z as f64)/dz;
+                    }
+                }
+                    else 
+                {
+                    if dy.abs() > dz.abs()
+                    {
+                        t = (y-p.y as f64)/dy;
+                    }
+                        else 
+                    {
+                        t = (z-p.z as f64)/dz;
+                    }
+                }
+
+                if t>0.0 && t<=1.0   
+                {
+                    let m = t*2000000000000000.0f64;
+                    return Self::int(&m);
+                }
+                false
+            }
+            )
+
+  /*
+        if i.iter()
+            .all(|(x,y,z)| !(*x==-1.0 && *y==-1.0 && *z==-1.0) && 
+                                              Self::int(x) && Self::int(y) && Self::int(z))
+        {
+            for (sx,sy,sz) in i
+            {
+                let dx = (sx - p.x as f64);
+                let dy = (sy - p.y as f64);
+                let dz = (sz - p.z as f64);
+
+                let mut t = -1.0;
+                if dx.abs() > dy.abs()
+                {
+                    if dx.abs() > dz.abs()
+                    {
+                        t = (sx-p.x as f64)/dx;
+                    }
+                      else
+                    {
+                        t = (sz-p.z as f64)/dz;
+                    }
+                }
+                  else 
+                {
+                    if dy.abs() > dz.abs()
+                    {
+                        t = (sy-p.y as f64)/dy;
+                    }
+                      else 
+                    {
+                        t = (sz-p.z as f64)/dz;
+                    }
+                }
+
+                if t<0.0 || t>1.0
+                {
+                    return false;
+                }
+                //println!("{} {} {}",sol.0,sol.1,sol.2);
+            }
+
+            return true;
+        }
+        */
+
+        
       //println!("{:?}",i);
       //false
       /*
 
-
-        for (id,p) in self.pts.iter().enumerate()
-        {
-            if id==a { continue; }
-
-            let pp = p.pos.clone();
-
-            let x = (pp.x - va.pos.x) as f64;
-            let y = (pp.y - va.pos.y) as f64;
-            let z = (pp.z - va.pos.z) as f64;
-
-           // println!("po {} {} {}",x,y,z);
-
-            let mut px = 0.0f64;
-            let mut py = 0.0f64;
-            let mut pz = 0.0f64;
-
-            px = x/dx; 
-            py = y/dy; 
-            pz = z/dz; 
-
-            let mut ipx = x;
-            let mut ipy = y;
-            let mut ipz = z;
-
-            //px>=0.0 && py>=0.0 && pz>=0.0 &&
-            if   (px-py).abs()<0.001 && (py-pz).abs()<0.001
-            {                
-               // println!("GOOOD {} {} {}",px,py,pz);
-                cnt+=1;
-                //return true;
-            }
-              else 
-            {
-               // println!("{} bad {} {} {}",cnt,px,py,pz);
-                return false;
-            }
-      }
 
       return true;
 */      
@@ -346,44 +387,57 @@ impl Space {
         let zz2 = self.pts.iter().map(|x| x.pos.z).max().unwrap();
 
         //self.pts.iter_mut().for_each(|v| { v.pos.z+=v.dir.x; 
-                                                       //v.pos.y+=v.dir.y; 
-                                                       //v.pos.z+=v.dir.z; });
+                                            //v.pos.y+=v.dir.y; 
+                                            //v.pos.z+=v.dir.z; });
 
         //println!("{} {} {} ",xx,yy,zz);
         //println!("{} {} {} ",xx2-xx,yy2-yy,zz2-zz);
         
         for a in 0..self.pts.len()
         {
-                let s = 30;
-                let mut p = self.pts[a].pos.clone();
-                let off = self.pts[a].dir.clone();
+            let s = 15;
+            let mut p = self.pts[a].pos.clone();
+            let off = self.pts[a].dir.clone();
 
-                for t in 0..s
+            println!("{}/{}",a,self.pts.len());
+
+            for t in 0..s*10
+            {
+                
+                for z in -s..s
                 {
-                    for z in -s..s
+                    for y in -s..s
                     {
-                        for y in -s..s
+                        for x in -s..s
                         {
-                            for x in -s..s
+                            if x==0 && y==0 && z==0
                             {
-                                let pos = Vec3::new( p.x,p.y, p.z);
-                                let d = Vec3::new(x,y,z);
-
-                                if self.try_throw(a,pos,d)
-                                {
-                                    println!("Yes {:?} {:?}",p,d);
-                                    return (p.x-d.x +
-                                            p.y-d.y +
-                                            p.z-d.z) as i64;
-                                }
+                                continue;
                             }
-                        }                        
-                    }      
+                            let pos = Vec3::new(p.x-x,p.y-y, p.z-z);
+                            let d   = Vec3::new(  x,  y,   z);
 
-                    p.x+=off.x;
-                    p.y+=off.y;
-                    p.z+=off.z;
-                }
+                            if self.try_throw(a,pos,d)
+                            {
+                                let rx = p.x - d.x;
+                                let ry = p.y - d.y;
+                                let rz = p.z - d.z;
+
+                                if pos.x==24
+                                //if d.x==-3 && d.y==1
+                                {
+                                    println!("Yes {},{},{} {:?} = {}",pos.x,pos.y,pos.z,d,pos.x+pos.y+pos.z);
+                                }
+                                //return (rx+ry+rz) as i64;
+                            }
+                        }
+                    }                        
+                }      
+
+                p.x+=off.x;
+                p.y+=off.y;
+                p.z+=off.z;
+            }
         }
         0
     }
