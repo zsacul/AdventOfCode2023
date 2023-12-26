@@ -1,11 +1,7 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
 use std::collections::VecDeque;
-
 use rustc_hash::FxHashMap;
 use rustc_hash::FxHashSet;
 use rand::Rng;
-
 
 struct World
 {
@@ -120,10 +116,8 @@ impl World
         stack.push(s);
         let mut res = 0;
 
-        while !stack.is_empty()
+        while let Some(n) = stack.pop()
         {
-            let n = stack.pop().unwrap();
-
             if !h.contains(n) 
             {
                 h.insert(n.to_string());                
@@ -147,14 +141,12 @@ impl World
     }
 
 
-    fn bfs_count_edges(&mut self,res:&mut HashMap<(usize,usize),usize>,start:String,end:String)
+    fn bfs_count_edges(&mut self,res:&mut FxHashMap<(usize,usize),usize>,start:String,end:String)
     {
         let mut stack = VecDeque::new();
         stack.push_back(start);
         
-        let mut visited = HashSet::new();
-
-        let n = self.names.len();
+        let mut visited = FxHashSet::default();
 
         while !stack.is_empty()        
         {
@@ -168,15 +160,12 @@ impl World
             {
                 for l in self.links.get(&n).unwrap()
                 {
-                    if self.get_connected(&n,l)
+                    if self.get_connected(&n,l) && !visited.contains(l)
                     {
-                        if !visited.contains(l)
-                        {
-                            let key = self.get_key(&n.to_string(),&l.to_string());
-                            let cnt = *res.get(&key).unwrap_or(&0);
-                            res.insert(key, cnt+1);
-                            stack.push_back(l.to_string());
-                        }
+                        let key = self.get_key(&n.to_string(),&l.to_string());
+                        let cnt = *res.get(&key).unwrap_or(&0);
+                        res.insert(key, cnt+1);
+                        stack.push_back(l.to_string());
                     }
                 }
             }
@@ -186,10 +175,10 @@ impl World
 
     fn calc1(&mut self)->usize
     {    
-        let mut res = HashMap::new();
+        let mut res = FxHashMap::default();
 
         let mut rng = rand::thread_rng();
-        for i in 0..100
+        for _ in 0..800
         {
             let a = rng.gen_range(0..self.names.len());
             let b = rng.gen_range(0..self.names.len());
@@ -197,9 +186,7 @@ impl World
             let s = self.names.iter().nth(a).unwrap().to_string();
             let e = self.names.iter().nth(b).unwrap().to_string();
 
-            //let s1 = shortest_path(&mut graph, a,b );
             self.bfs_count_edges(&mut res,s,e);
-    
         }
 
         let mut counts = vec![];
@@ -208,11 +195,9 @@ impl World
         {
             counts.push( (cnt,ed) );
         } 
-
     
         counts.sort();
         counts.reverse();
-        println!("counts:{:?}",counts);
 
         let r1 = counts[0].1;
         let r2 = counts[1].1;
@@ -224,8 +209,6 @@ impl World
 
         let all_nodes = self.names.len();
         
-        
-            
         for s in self.names.clone().iter()
         {
             let mut hash = FxHashSet::default();
@@ -242,11 +225,6 @@ impl World
 
         0
     }
- 
-     
-
-
-
 }
 
 pub fn part1(data:&[String])->usize
