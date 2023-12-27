@@ -220,7 +220,6 @@ impl World
                 println!("cut1:{} cut2:{}",cut1,cut2);
                 return cut1*cut2;                         
             }
-   
         }
 
         0

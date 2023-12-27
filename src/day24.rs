@@ -50,7 +50,51 @@ impl Voxel
             z : tab[2].trim().parse::<i64>().unwrap(),
         }
     }
+
+    fn add(&self,x:i64,y:i64,z:i64,)->Self
+    {
+        Self{
+            x: self.x + x,
+            y: self.y + y,
+            z: self.z + z,
+        }
+    }
 }
+
+//19, 13, 30 @ -2,  1, -2
+//18, 19, 22 @ -1, -1, -2
+//20, 25, 34 @ -2, -2, -4
+//12, 31, 28 @ -1, -2, -1
+//20, 19, 15 @  1, -5, -3
+
+// p = p.s + dx *t1
+// s = s.s + ds *t1
+// p.s + dx *t1 = s.s + ds *t1
+// p.s - s.s = ds *t1 - dx *t1
+
+// p.s - s.s = t1*(ds - dx)
+
+//19, 13, 30 @ -2,  1, -2
+// psx -19 = t1*(-2 - dxx)
+// psy -13 = t1*( 1 - dxy)
+// psz -30 = t1*(-2 - dxz)
+// psx -18 = t2*(-1 - dxx)
+// psy -19 = t2*(-1 - dxy)
+// psz -22 = t2*(-2 - dxz)
+// psx -20 = t3*(-2 - dxx)
+// psy -25 = t3*(-2 - dxy)
+// psz -34 = t3*(-4 - dxz)
+
+
+ psx = t1*(-2 - dxx) + 19
+ psy = t1*( 1 - dxy) + 13
+ psz = t1*(-2 - dxz) + 30
+ psx = t2*(-1 - dxx) + 18
+ psy = t2*(-1 - dxy) + 19
+ psz = t2*(-2 - dxz) + 22
+ psx = t3*(-2 - dxx) + 20
+ psy = t3*(-2 - dxy) + 25
+ psz = t3*(-4 - dxz) + 34
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct Brick

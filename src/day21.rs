@@ -1,7 +1,4 @@
-use std::collections::{HashMap,HashSet, VecDeque};
-//use std::thread::sleep;
-//use rand::random;
-
+use std::{collections::{HashMap,HashSet, VecDeque}, sync::Arc};
 use super::vec2::Vec2;
 
 #[derive(Debug)]
@@ -27,7 +24,7 @@ impl World
                 
                 if c!='.'
                 {
-                    hash.insert(Vec2::new(x as i64 - 65+49,y as i64 - 65+49),c); 
+                    hash.insert(Vec2::new(x as i64,y as i64),c); 
                 }
             }
         }
@@ -39,10 +36,18 @@ impl World
         *self.hash.get(&p).unwrap_or(&'.')
     }
 
+    //ppp
+    //ppp
+    //ppp
+
     fn c2(&self,p:Vec2)->char
     {
-        let xx = (p.x + 99999999*self.dx) as usize % (self.dx as usize);
-        let yy = (p.y + 99999999*self.dy) as usize % (self.dy as usize);
+        let dx = self.dx as usize;
+        let dy = self.dy as usize;
+        let hx = ((self.dx as i64-1))/2;
+        let hy = ((self.dy as i64-1))/2;
+        let xx = (p.x + hx + 99999999*self.dx) as usize % dx;
+        let yy = (p.y + hy + 99999999*self.dy) as usize % dy;
         let pp = Vec2::new( xx as i64,  yy as i64);
 
         *self.hash.get(&pp).unwrap_or(&'.')
@@ -104,8 +109,8 @@ impl World
         {
             for xx in 0-s..self.dx+s
             {
-                let x = xx; //s + xx-yy;
-                let y = yy; //xx + yy;
+                let x = xx;
+                let y = yy;
                 let p = Vec2::new(x as i64,y as i64);
                 let c = hash.get(&p).is_some();
 
@@ -120,7 +125,6 @@ impl World
             println!();
         }
     }
-
 
     #[allow(dead_code)]
     fn printb(&self)
@@ -160,10 +164,9 @@ impl World
 
         list.push_back(pos);
 
-        let mut hash:HashMap<Vec2,u128> = HashMap::new();
+        let mut hash :HashMap<Vec2,u128> = HashMap::new();
         let mut hashn:HashMap<Vec2,u128> = HashMap::new();
         hashn.insert(pos,1u128);
-
         
         for s in 0..steps
         {
@@ -171,10 +174,9 @@ impl World
             hashn.clear();
 
             let moves = list.len();
-            for m in 0..moves
+            for _ in 0..moves
             {
                 let pos = list.pop_front().unwrap();
-
                 let val = *hash.get(&pos).unwrap_or(&0);
 
                 if val>0 
@@ -201,7 +203,7 @@ impl World
     fn calc2(&mut self,steps:usize)->HashSet<Vec2>
     {
         let mut list = VecDeque::new();
-        let pos = *self.hash.iter().find(|(_,c)| **c=='S').unwrap().0;
+        let pos = Vec2::new(0,0);// *self.hash.iter().find(|(_,c)| **c=='S').unwrap().0;
 
         println!("pos = {:?}",pos);
         self.hash.insert(pos,'.');
@@ -264,16 +266,16 @@ impl World
     {
         let h = self.calc2(steps as usize);
         let s = 64;
-        let odd  = self.count(&h,0,0,s) as i64;
-        let even = self.count(&h,1,0,s) as i64;
-        let odd2  = self.count(&h,2,0,s) as i64;
+        let odd    = self.count(&h,0,0,s) as i64;
+        let even   = self.count(&h,1,0,s) as i64;
+        let odd2   = self.count(&h,2,0,s) as i64;
         let isteps = steps/s;
 
         let n_even = (isteps-1)/2;
         let n_odd  = isteps-n_even;
 
         println!("odd    {}",odd);
-        println!("odd2    {}",odd2);
+        println!("odd2   {}",odd2);
         println!("even   {}",even);
         println!("n_odd  {}",n_odd);
         println!("n_even {}",n_even);
@@ -299,9 +301,10 @@ pub fn part1(data:&[String],steps:usize)->usize
 pub fn part2(data:&[String],steps:usize)->usize
 {
     let mut w = World::new(data);
-    w.calc3(steps as i64)
+//    w.calc3(steps as i64)
+    //w.calc(steps)
     //let r: Vec<&str> = data[0].split(',').collect();
-    //count2(r)
+    w.calc2(steps).len()
 
 }
 
@@ -319,10 +322,9 @@ pub fn solve(data:&[String])
   //part2(data,26501365);
 }
 
-#[test]
-fn test1()
+#[allow(unused)]
+fn get_data_small()->Vec<String>
 {
-    let v = 
     vec![
         "...........".to_string(),
         ".....###.#.".to_string(),
@@ -335,27 +337,20 @@ fn test1()
         ".##.#.####.".to_string(),
         ".##..##.##.".to_string(),
         "...........".to_string(),
-    ];
+    ]
+}
+
+#[test]
+fn test1()
+{
+    let v = get_data_small();
     assert_eq!(part1(&v,1),2);
 }
 
 #[test]
 fn test2()
 {
-    let v = 
-    vec![
-        "...........".to_string(),
-        ".....###.#.".to_string(),
-        ".###.##..#.".to_string(),
-        "..#.#...#..".to_string(),
-        "....#.#....".to_string(),
-        ".##..S####.".to_string(),
-        ".##..#...#.".to_string(),
-        ".......##..".to_string(),
-        ".##.#.####.".to_string(),
-        ".##..##.##.".to_string(),
-        "...........".to_string(),
-    ];
+    let v = get_data_small();
     assert_eq!(part1(&v,2),4);
 }
 
@@ -363,20 +358,7 @@ fn test2()
 #[test]
 fn test3()
 {
-    let v = 
-    vec![
-        "...........".to_string(),
-        ".....###.#.".to_string(),
-        ".###.##..#.".to_string(),
-        "..#.#...#..".to_string(),
-        "....#.#....".to_string(),
-        ".##..S####.".to_string(),
-        ".##..#...#.".to_string(),
-        ".......##..".to_string(),
-        ".##.#.####.".to_string(),
-        ".##..##.##.".to_string(),
-        "...........".to_string(),
-    ];
+    let v = get_data_small();
     assert_eq!(part1(&v,3),6);
 }
 
@@ -384,20 +366,7 @@ fn test3()
 #[test]
 fn test4()
 {
-    let v = 
-    vec![
-        "...........".to_string(),
-        ".....###.#.".to_string(),
-        ".###.##..#.".to_string(),
-        "..#.#...#..".to_string(),
-        "....#.#....".to_string(),
-        ".##..S####.".to_string(),
-        ".##..#...#.".to_string(),
-        ".......##..".to_string(),
-        ".##.#.####.".to_string(),
-        ".##..##.##.".to_string(),
-        "...........".to_string(),
-    ];
+    let v = get_data_small();
     assert_eq!(part1(&v,6),16);
 }
 
@@ -445,7 +414,7 @@ fn get_big_field()->Vec<String>
 #[test]
 fn test2_1()
 {
-    let v = get_big_field();
+    let v = get_data_small();
     assert_eq!(part2(&v,6),16);
 }
 
@@ -633,17 +602,24 @@ fn get_21_field()->Vec<String>
 
 
 #[test]
-fn testl_s1()
+fn testl_s0()
 {
     let v = get_big_field();
-    assert_eq!(part2(&v,100),6536);
+    assert_eq!(part2(&v,6),16);
+}
+
+#[test]
+fn testl_s1()
+{    
+    let v = get_big_field();
+    assert_eq!(part2(&v,10),50);
 }
 
 #[test]
 fn testl_s2()
 {
     let v = get_big_field();
-    assert_eq!(part2(&v,100), 6536);
+    assert_eq!(part2(&v,50), 1594);
 }
 
 #[test]
@@ -728,4 +704,27 @@ fn testl_14()
 {
     let v = get_big_field();
     assert_eq!(part2(&v,100000000), 6694214769421436);
+}
+
+
+
+#[test]
+fn testl_r1()
+{
+    let v = get_big_field();
+    assert_eq!(part2(&v,51), 1653);
+}
+
+#[test]
+fn testl_r2()
+{
+    let v = get_big_field();
+    assert_eq!(part2(&v,501), 167726);
+}
+
+#[test]
+fn testl_r3()
+{
+    let v = get_big_field();
+    assert_eq!(part2(&v,1001), 668697);
 }
