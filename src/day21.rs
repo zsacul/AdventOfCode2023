@@ -8,7 +8,6 @@ use super::vec2::Vec2;
 struct World
 {
     hash    : HashMap<Vec2,char>,
-    steps   : HashMap<Vec2,u64>,
     dx      : i64,
     dy      : i64,
 }
@@ -43,8 +42,8 @@ impl World
     {
         let dx = self.dx as usize;
         let dy = self.dy as usize;
-        let hx = ((self.dx as i64-1))/2;
-        let hy = ((self.dy as i64-1))/2;
+        let hx   = (self.dx-1)/2;
+        let hy   = (self.dy-1)/2;
         let xx = (p.x + hx + 99999999*self.dx) as usize % dx;
         let yy = (p.y + hy + 99999999*self.dy) as usize % dy;
         let pp = Vec2::new( xx as i64,  yy as i64);
@@ -57,7 +56,6 @@ impl World
         World 
         { 
             hash  : World::get_data(v),
-            steps : HashMap::new(),
             dx    : v[0].len() as i64,
             dy    :    v.len() as i64,
         }    
@@ -94,7 +92,7 @@ impl World
             {
                 let x = xx;
                 let y = yy;
-                let p = Vec2::new(x as i64,y as i64);
+                let p = Vec2::new(x,y);
                 let c = hash.get(&p).is_some();
 
 
@@ -106,17 +104,14 @@ impl World
                 {
                     print!(" ");
                 }
-                else
-                if (ix+iy)%2==0
+                else if (ix+iy)%2==0
                 {
                     if c { print!("-"); }
                     else { print!("©"); }
                 }
-                  else
-                {
-                    if c { print!("-"); }
-                    else { print!("®"); }//print!("."); }
-                }
+                  else if c { print!("-"); }
+                       else { print!("®"); }//print!("."); }
+                
             }
             println!();
         }
@@ -129,18 +124,16 @@ impl World
         let pos = *self.hash.iter().find(|(_,c)| **c=='S').unwrap().0;
         self.hash.insert(pos,'.');
 
-        //self.print();
-        println!("pos={:?}",pos);
 
         list.push_back(pos);
 
-        let mut hash :HashMap<Vec2,u128> = HashMap::new();
+
         let mut hashn:HashMap<Vec2,u128> = HashMap::new();
         hashn.insert(pos,1u128);
         
-        for s in 0..steps
+        for _ in 0..steps
         {
-            hash = hashn.clone();
+            let hash = hashn.clone();
             hashn.clear();
 
             let moves = list.len();
@@ -157,35 +150,28 @@ impl World
                         {
                             let was = *hashn.get(&p).unwrap_or(&0);
                             hashn.insert(p,was+val);
-                          //  println!("p={:?},val={},was={}",p,val,was);
                             list.push_back(p);
                         }
                     }                        
                 }
             }
-            list = hashn.keys().map(|k| *k).collect();
+            list = hashn.keys().copied().collect();
         }
         hashn.values().count()
 
         //panic!("err");
     }
 
-    fn count3(&self,h:&mut HashSet<Vec2>,x:i64,y:i64,s:i64,steps:usize)->usize
+    fn count3(&self,x:i64,y:i64,s:i64,steps:usize)->usize
     {
         let l = 2*s+1;
         let mut list = VecDeque::new();
-        let mut pos = Vec2::new( x*l,y*l);// *self.hash.iter().find(|(_,c)| **c=='S').unwrap().0;
+        let mut pos = Vec2::new( x*l,y*l);
 
-        if x==0 && y==0
-        {
-        }
-          else 
-        {          
-            if y>0 { pos.y-=s; }
-            if y<0 { pos.y+=s; }
-            if x>0 { pos.x-=s; }
-            if x<0 { pos.x+=s; }
-        }
+        if y>0 { pos.y-=s; }
+        if y<0 { pos.y+=s; }
+        if x>0 { pos.x-=s; }
+        if x<0 { pos.x+=s; }
 
         let left_steps = steps as i64- pos.x.abs() - pos.y.abs();
 
@@ -196,13 +182,12 @@ impl World
         
         list.push_back(pos);
 
-        let mut hash  : HashSet<Vec2> = HashSet::new();
         let mut hashn : HashSet<Vec2> = HashSet::new();
         hashn.insert(pos);
 
         for _ in 0..left_steps
         {
-            hash = hashn.clone();
+            let hash = hashn.clone();
             hashn.clear();
 
             let moves = list.len();
@@ -223,7 +208,7 @@ impl World
                     }                        
                 }
             }
-            list = hashn.iter().map(|k| *k).collect();
+            list = hashn.iter().copied().collect()
         }
     
         list.iter()
@@ -235,24 +220,16 @@ impl World
 
     fn calc3(&mut self,steps:i64)->usize
     {
-        let print = !true;
-
+        let print = false;
         let s = 65;
-
         
-        let ll = (2*s+1);
+        let ll = 2*s+1;
         let nn = (steps+2*s)/ll;
 
-
         let mut h : HashSet::<Vec2> = HashSet::new();
-        let off = (((nn-2)/2)*2).min(0);
 
-        //let odd  = self.count3(&mut h,off+0,0,s,steps as usize);
-        //let even = self.count3(&mut h,off+1,0,s,steps as usize);
-
-        let even = self.count3(&mut h,-nn+2,0,s,steps as usize);
-        let odd = self.count3(&mut h,-nn+3,0,s,steps as usize);
-
+        let even = self.count3(-nn+2,0,s,steps as usize);
+        let odd  = self.count3(-nn+3,0,s,steps as usize);
 
 /*
         let mut sum1=0;
@@ -280,8 +257,8 @@ impl World
         
         for yy in -nn..=nn
         {
-            let mut ss  = yy.abs();
-            //if yy%100==0
+            let ss  = yy.abs();
+            if print && yy%100==0
             {
                 println!("y={}",yy);
             }
@@ -296,35 +273,35 @@ impl World
                 ev2r = 0;
             }
 
-            if yy.abs()>5 && span>3 && yy.abs()<nn-5
+            if yy.abs()>4 && span>3 && yy.abs()<nn-5
             {
 
                 if ev1l==0 
                 {                   
                     h.clear();
-                    ev1l = self.count3(&mut h,-nn+ss  ,yy,s,steps as usize);
+                    ev1l = self.count3(-nn+ss  ,yy,s,steps as usize);
                 }
 
                 if ev2l==0 
                 {
                     h.clear();
-                    ev2l = self.count3(&mut h,-nn+ss+1,yy,s,steps as usize);
+                    ev2l = self.count3(-nn+ss+1,yy,s,steps as usize);
                 }
 
                 if ev1r==0 
                 {
                     h.clear();
-                    ev1r = self.count3(&mut h, nn-ss,yy,s,steps as usize);
+                    ev1r = self.count3( nn-ss,yy,s,steps as usize);
                 }
 
                 if ev2r==0
                 {   
                     h.clear();
-                    ev2r = self.count3(&mut h, nn-ss-1  ,yy,s,steps as usize);
+                    ev2r = self.count3( nn-ss-1  ,yy,s,steps as usize);
                 }
 
                 let n_even = ((span+1)/2) as usize;
-                let n_odd  = (span as usize-n_even) as usize;
+                let n_odd  = span as usize-n_even;
     
                 sum2+=ev1l+ev2l+ev1r+ev2r + n_even*even + n_odd*odd;
             }
@@ -332,8 +309,8 @@ impl World
             {
                 for xx in -nn+ss..=nn-ss
                 {
-                    let mut h : HashSet::<Vec2> = HashSet::new();
-                    let ss  = (steps - xx.abs()*ll - yy.abs()*ll);
+                    //let mut h : HashSet::<Vec2> = HashSet::new();
+                    //let ss  = steps - xx.abs()*ll - yy.abs()*ll;
                     let mut ev = 0;
                     //  println!("steps left:{}",ss);
 
@@ -351,7 +328,7 @@ impl World
                         }
                         else
                         {
-                            ev = self.count3(&mut h,xx,yy,s,steps as usize);
+                            ev = self.count3(xx,yy,s,steps as usize);
                         }
                     }
                     sum2+=ev;
@@ -363,12 +340,15 @@ impl World
             }
 
             if print { 
-                println!("");
+                println!();
             }
         }
 
         //println!("sum1:{}",sum1);
-        println!("sum2:{}",sum2);
+        if print
+        {
+            println!("sum2:{}",sum2);
+        }
 
         sum2
     }
@@ -436,7 +416,6 @@ fn test3()
     assert_eq!(part1(&v,3),6);
 }
 
-
 #[test]
 fn test4()
 {
@@ -444,6 +423,7 @@ fn test4()
     assert_eq!(part1(&v,6),16);
 }
 
+#[allow(unused)]
 fn get_big_field()->Vec<String>
 {
     let v = 
@@ -492,14 +472,12 @@ fn test2_1()
     assert_eq!(part2(&v,6),16);
 }
 
-
 #[test]
 fn test2_2()
 {
     let v = get_big_field();
     assert_eq!(part2(&v,10),50);
 }
-
 
 #[test]
 fn test2_3()
@@ -508,7 +486,6 @@ fn test2_3()
     assert_eq!(part2(&v,50),1594);
 }
 
-
 #[test]
 fn test2_4()
 {
@@ -516,12 +493,14 @@ fn test2_4()
     assert_eq!(part2(&v,100),6536);
 }
 
+#[test]
 fn test2_5()
 {
     let v = get_big_field();
     assert_eq!(part2(&v,500),167004);
 }
 
+#[test]
 fn test2_6()
 {
     let v = get_big_field();
@@ -535,7 +514,7 @@ fn test2_7()
     assert_eq!(part2(&v,5000),16733044);
 }
 
-
+#[allow(unused)]
 fn get_21_field()->Vec<String>
 {
 
@@ -779,8 +758,6 @@ fn testl_14()
     let v = get_big_field();
     assert_eq!(part2(&v,100000000), 6694214769421436);
 }
-
-
 
 #[test]
 fn testl_r1()

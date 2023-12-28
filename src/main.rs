@@ -1,6 +1,6 @@
 use timer::Timer;
 mod tools;
-use std::thread;
+//use std::thread;
 mod dijkstria;
 //mod cycliclist;
 //mod cyclic2;
