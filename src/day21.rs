@@ -1,4 +1,4 @@
-use std::{collections::{HashMap,HashSet, VecDeque}, sync::Arc};
+use std::collections::{HashMap,HashSet, VecDeque};
 use super::vec2::Vec2;
 
 #[derive(Debug)]
@@ -99,28 +99,42 @@ impl World
     }
 
     #[allow(dead_code)]
-    fn print_hash(&self,hash:&HashSet<Vec2>,step:usize)
+    fn print_hash(&self,hash:&HashSet<Vec2>,step:usize,cage:usize)
     {
         println!();
         println!("dx = {}, dy = {}",self.dx,self.dy);
-        let s = 32;
+        println!("step = {}, cage = {}",step,cage);
+        let s = step as i64;
 
-        for yy in 0-s..self.dy+s
+        for yy in -s..=s
         {
-            for xx in 0-s..self.dx+s
+            for xx in -s..=s
             {
                 let x = xx;
                 let y = yy;
                 let p = Vec2::new(x as i64,y as i64);
                 let c = hash.get(&p).is_some();
 
-                if p.distance2(self.dx,self.dy)>2+2*step as i64
+
+                let cc = (cage-1)/2;
+                let ix = (cc as i64+x+999999i64*cage as i64)/(cage as i64);
+                let iy = (cc as i64+y+999999i64*cage as i64)/(cage as i64);
+
+                if Vec2::zero().distance2(xx,yy).abs()>s
                 {
                     print!(" ");
                 }
                 else
-                if c { print!("■"); }
-                else { print!("."); }
+                if (ix+iy)%2==0
+                {
+                    if c { print!("-"); }
+                    else { print!("©"); }
+                }
+                  else
+                {
+                    if c { print!("-"); }
+                    else { print!("®"); }//print!("."); }
+                }
             }
             println!();
         }
@@ -247,11 +261,11 @@ impl World
     fn count(&self,h:&HashSet<Vec2>,x:i64,y:i64,s:i64)->usize
     {
         let mut res = 0;
-        let l = 2*s;
+        let l = 2*s+1;
 
-        for y in y*l-s..y*l+s
+        for y in y*l-s..=y*l+s
         {
-            for x in x*l-s..x*l+s
+            for x in x*l-s..=x*l+s
             {
                 if h.get(&Vec2::new(x,y)).is_some() 
                 {
@@ -262,26 +276,187 @@ impl World
         res
     }
 
+    fn count3(&self,memo:&mut HashMap<(i64,i64,i64),usize>,h:&mut HashSet<Vec2>,x:i64,y:i64,s:i64,steps:usize)->usize
+    {
+        let l = 2*s+1;
+        let mut list = VecDeque::new();
+        let mut pos = Vec2::new( x*l,y*l);// *self.hash.iter().find(|(_,c)| **c=='S').unwrap().0;
+
+        if x==0 && y==0
+        {
+        }
+          else 
+        {          
+            if y>0 { pos.y-=s; }
+            if y<0 { pos.y+=s; }
+            if x>0 { pos.x-=s; }
+            if x<0 { pos.x+=s; }
+        }
+
+        let left_steps = steps as i64- pos.x.abs() - pos.y.abs();
+
+        if left_steps<=0 
+        {
+            return 0;
+        }
+        
+        let xm = (pos.x + 99999999*l)%l;
+        let ym = (pos.y + 99999999*l)%l;
+        let key = (xm,ym,left_steps);
+
+        //println!("{:?}",key);
+
+        if memo.get(&key).is_some()
+        {
+            memo.get(&key).unwrap();
+        }
+
+        list.push_back(pos);
+
+        let mut hash  : HashSet<Vec2> = HashSet::new();
+        let mut hashn : HashSet<Vec2> = HashSet::new();
+        hashn.insert(pos);
+
+        for _ in 0..left_steps
+        {
+            hash = hashn.clone();
+            hashn.clear();
+
+            let moves = list.len();
+            for _ in 0..moves
+            {
+                let pos = list.pop_front().unwrap();
+                let val = hash.get(&pos).is_some();
+
+                if val
+                {
+                    for p in pos.around4()
+                    {
+                        if self.c2(p)!='#'
+                        {
+                            hashn.insert(p);
+                            list.push_back(p);
+                        }
+                    }                        
+                }
+            }
+            list = hashn.iter().map(|k| *k).collect();
+        }
+        //hashn.len()
+
+        let res = 
+        list.iter()
+            .filter(|p| p.x>=x*l-s && p.x<=x*l+s && 
+                                p.y>=y*l-s && p.y<=y*l+s)
+            .count();
+
+        memo.insert(key,res);
+
+        res
+    }
+
+
     fn calc3(&mut self,steps:i64)->usize
     {
-        let h = self.calc2(steps as usize);
-        let s = 64;
-        let odd    = self.count(&h,0,0,s) as i64;
-        let even   = self.count(&h,1,0,s) as i64;
-        let odd2   = self.count(&h,2,0,s) as i64;
+        let print = !true;
+        let h = self.calc2(271 as usize);
+                
+        if print
+        {
+            println!("result:{}",h.len());
+        }
+
+        let s = 65;
+        let odd     = self.count(&h, 0, 0,s) as i64;
+        let even    = self.count(&h, 1, 0,s) as i64;
         let isteps = steps/s;
 
+        //self.print_hash(&h, steps as usize+1,s as usize);
+        
         let n_even = (isteps-1)/2;
         let n_odd  = isteps-n_even;
+        
+        let ll = (2*s+1);
+        let nn = (steps+2*s)/ll;
+/*
+        let mut sum1=0;
+        for yy in -nn..=nn
+        {
+            for xx in -nn..=nn
+            {
+                let ev = self.count(&h,xx,yy,s) as i64;        
+                sum1+=ev;
 
+                if print { print!("[{:>5}]",ev); }
+            }
+            if print { println!(""); }
+        }
+
+        if print { println!(""); }
+        */
+        let mut memo = HashMap::new();
+
+        let mut sum2 = 0;
+
+        for yy in -nn..=nn
+        {
+//            if yy%100==0
+            {
+                println!("y={}",yy);
+            }
+            for xx in -nn..=nn
+            {
+                let mut h : HashSet::<Vec2> = HashSet::new();
+                let ss  = (steps - xx.abs()*ll - yy.abs()*ll);
+                let mut ev = 0;
+                //  println!("steps left:{}",ss);
+
+                if xx.abs()+yy.abs()<=nn
+                {
+                    if xx.abs()+yy.abs()<=nn-2
+                    {
+                        if (xx+yy)%2==0
+                        {
+                            ev = odd;
+                        }
+                        else {
+                            ev = even;
+                        }
+                    }
+                    else
+                    {
+                        ev = self.count3(&mut memo,&mut h,xx,yy,s,steps as usize) as i64;
+                    }
+                }
+
+
+                sum2+=ev;
+
+                if print { 
+                print!("[{:>5}]",ev);
+                }
+            }
+            if print { 
+                println!("");
+            }
+        }
+        /*
         println!("odd    {}",odd);
-        println!("odd2   {}",odd2);
         println!("even   {}",even);
+        println!("even2  {}",even2);
+        println!("even3  {}",even3);
+        println!("even4  {}",even4);
         println!("n_odd  {}",n_odd);
         println!("n_even {}",n_even);
 
-        (n_even*even +
-         n_odd*odd) as usize
+        */
+        //println!("sum1:{}",sum1);
+        println!("sum2:{}",sum2);
+
+        sum2 as usize
+
+        //(n_even*even +
+          //n_odd*odd ) as usize
     }
 
 }
@@ -301,10 +476,10 @@ pub fn part1(data:&[String],steps:usize)->usize
 pub fn part2(data:&[String],steps:usize)->usize
 {
     let mut w = World::new(data);
-//    w.calc3(steps as i64)
+    w.calc3(steps as i64)
     //w.calc(steps)
     //let r: Vec<&str> = data[0].split(',').collect();
-    w.calc2(steps).len()
+//    w.calc2(steps).len()
 
 }
 
@@ -312,11 +487,15 @@ pub fn part2(data:&[String],steps:usize)->usize
 pub fn solve(data:&[String])
 {    
     println!("Day21");
-//    println!("part1:{}",part1(data,64));
-  //  println!("part2:{}",part2(data,26501365));
+    println!("part1:{}",part1(data,64));
+    println!("part2:{}",part2(data,26501365));
 
-  let v = get_big_field();
-  let t = part2(&v,5000);
+//  let v = get_big_field();
+//  let t = part2(&v,5000);
+
+  //let v = get_21_field();
+  //assert_eq!(part2(&v,701), 51922);
+
   //,16733044);
 
   //part2(data,26501365);
@@ -726,5 +905,78 @@ fn testl_r2()
 fn testl_r3()
 {
     let v = get_big_field();
-    assert_eq!(part2(&v,1001), 668697);
+    assert_eq!(part2(&v,1001), 669704);
 }
+
+#[test]
+fn testl_b1()
+{
+    let v = get_21_field();
+    assert_eq!(part2(&v,151), 20954);
+}
+
+#[test]
+fn testl_b2()
+{
+    let v = get_21_field();
+    assert_eq!(part2(&v,251), 57636);
+}
+
+#[test]
+fn testl_b3()
+{
+    let v = get_21_field();
+    assert_eq!(part2(&v,501), 228740);
+}
+
+#[test]
+fn testl_b4()
+{
+    let v = get_21_field();
+    assert_eq!(part2(&v,281), 72174);
+}
+
+#[test]
+fn testl_b5()
+{
+    let v = get_21_field();
+    assert_eq!(part2(&v,701), 447076);
+}
+
+/*
+---- day21::testl_b3 stdout ----
+pos = Vec2 { x: 0, y: 0 }
+[    0] [    0] [    0] [    0] [  868] [    0] [    0] [    0] [    0]
+[    0] [    0] [    0] [ 2708] [ 7568] [ 2701] [    0] [    0] [    0]
+[    0] [    0] [ 2708] [ 7681] [ 7787] [ 7678] [ 2701] [    0] [    0]
+[    0] [ 2708] [ 7681] [ 7787] [ 7791] [ 7787] [ 7678] [ 2701] [    0]
+[  869] [ 7572] [ 7787] [ 7791] [ 7787] [ 7791] [ 7787] [ 7565] [  858]
+[    0] [ 2678] [ 7682] [ 7787] [ 7791] [ 7787] [ 7678] [ 2694] [    0]
+[    0] [    0] [ 2678] [ 7682] [ 7787] [ 7678] [ 2694] [    0] [    0]
+[    0] [    0] [    0] [ 2678] [ 7569] [ 2694] [    0] [    0] [    0]
+[    0] [    0] [    0] [    0] [  843] [    0] [    0] [    0] [    0]
+odd    7787
+even   7791
+
+pos = Vec2 { x: 0, y: 0 }
+[    0] [    0] [    0] [    0] [    0] [    0] [    0] [    0] [    0] [    0] [    0] [    0] [    0]
+[    0] [    0] [    0] [    0] [    0] [  496] [ 4726] [  505] [    0] [    0] [    0] [    0] [    0]
+[    0] [    0] [    0] [    0] [  496] [ 6181] [ 7787] [ 6173] [  505] [    0] [    0] [    0] [    0]
+[    0] [    0] [    0] [  496] [ 6181] [ 7787] [ 7791] [ 7787] [ 6173] [  505] [    0] [    0] [    0]
+[    0] [    0] [  496] [ 6181] [ 7787] [ 7791] [ 7787] [ 7791] [ 7787] [ 6173] [  505] [    0] [    0]
+[    0] [  496] [ 6181] [ 7787] [ 7791] [ 7787] [ 7791] [ 7787] [ 7791] [ 7787] [ 6173] [  505] [    0]
+[    0] [ 4744] [ 7787] [ 7791] [ 7787] [ 7791] [ 7787] [ 7791] [ 7787] [ 7791] [ 7787] [ 4710] [    0]
+[    0] [  496] [ 6191] [ 7787] [ 7791] [ 7787] [ 7791] [ 7787] [ 7791] [ 7787] [ 6162] [  505] [    0]
+[    0] [    0] [  496] [ 6191] [ 7787] [ 7791] [ 7787] [ 7791] [ 7787] [ 6162] [  505] [    0] [    0]
+[    0] [    0] [    0] [  496] [ 6191] [ 7787] [ 7791] [ 7787] [ 6162] [  505] [    0] [    0] [    0]
+[    0] [    0] [    0] [    0] [  496] [ 6191] [ 7787] [ 6162] [  505] [    0] [    0] [    0] [    0]
+[    0] [    0] [    0] [    0] [    0] [  496] [ 4727] [  505] [    0] [    0] [    0] [    0] [    0]
+[    0] [    0] [    0] [    0] [    0] [    0] [    0] [    0] [    0] [    0] [    0] [    0] [    0]
+odd    7787
+even   7791
+even2  7791
+even3  7791
+
+*/
+
+
