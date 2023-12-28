@@ -264,7 +264,7 @@ impl Pipes
     fn replace_s(&mut self,p:Vec2)
     {
         let right = Self::R_DIR.contains(self.elem(p.r()));
-        let down =  Self::D_DIR.contains(self.elem(p.b()));
+        let down =  Self::D_DIR.contains(self.elem(p.d()));
 
         let c = 
         if down
@@ -306,7 +306,7 @@ impl Pipes
 
             match dir {
                 'U' => { p = p.u() },
-                'D' => { p = p.b() },
+                'D' => { p = p.d() },
                 'R' => { p = p.r() },
                 'L' => { p = p.l() },
                 _ => panic!("wc"),
@@ -348,7 +348,7 @@ impl Pipes
             match c
             {
                 'U' => { pos = pos.u(); },
-                'D' => { pos = pos.b(); },
+                'D' => { pos = pos.d(); },
                 'R' => { pos = pos.r(); },
                 'L' => { pos = pos.l(); },
                 _ => panic!("wc"),
@@ -375,7 +375,7 @@ impl Pipes
             match c
             {
                 'U' => { pos = pos.u(); },
-                'D' => { pos = pos.b(); },
+                'D' => { pos = pos.d(); },
                 'R' => { pos = pos.r(); },
                 'L' => { pos = pos.l(); },
                 _ => panic!("wc"),
@@ -527,7 +527,7 @@ impl Pipes
         println!("corners: {:?}",self.corners);
         
 
-        //return Self::sholeace_area(points) + len/2 +1;
+        return Self::sholeace_polygon_area(points) + len/2 +1;
 
         let minx = points.iter().map(|k| k.x).min().unwrap();
         let miny = points.iter().map(|k| k.y).min().unwrap();

@@ -177,7 +177,7 @@ impl Space {
         let s = (-s1_y * (a1.x as f64 - b1.x as f64) + s1_x * (a1.y as f64 - b1.y as f64)) / (-s2_x * s1_y + s1_x * s2_y);
         let t = ( s2_x * (a1.y as f64 - b1.y as f64) - s2_y * (a1.x as f64 - b1.x as f64)) / (-s2_x * s1_y + s1_x * s2_y);
 
-        if s >= 0.0 && s <= 1.0 && t >= 0.0 && t <= 1.0 
+        if (0.0..=1.0).contains(&s) && (0.0..=1.0).contains(&t)
         {
             let i_x = a1.x as f64 + (t * s1_x);
             let i_y = a1.y as f64 + (t * s1_y);
@@ -277,7 +277,6 @@ impl Space {
             ).all(
             |(id,(x,y,z))|
             {
-                //println!("{} {} {} {} {} {} {} {} {} {}",id,x,y,z,p.x,p.y,p.z,d.x,d.y,d.z);
                 if id==a { return true; }
 
                 if x==-1.0 && y==-1.0 && z==-1.0 
@@ -324,7 +323,6 @@ impl Space {
 
                 if t>=0.0 && t<=1.0   
                 {
-                    //println!("dupa t:{} ",t);
                     let tx = t*(st.1.x as f64);
                     let ty = t*(st.1.y as f64);
                     let tz = t*(st.1.z as f64);
@@ -501,14 +499,6 @@ fn part2(data:&[String])->i64
     let mut w = Space::new();
     w.fill(data);
     w.count3()
-}
-
-fn partt(data:&[String])->i64
-{
-    let v = get_test_data();
-    let mut w = Space::new();
-    w.fill(&v);
-    w.count2()
 }
 
 #[allow(unused)]

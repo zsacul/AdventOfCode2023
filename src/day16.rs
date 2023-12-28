@@ -232,7 +232,7 @@ pub fn part2(data:&[String])->usize
 
     for x in 1..dx as i64
     {
-        trys.push((Vec2::new(x,-1).b(),Dirs::S));
+        trys.push((Vec2::new(x,-1).d(),Dirs::S));
         trys.push((Vec2::new(x,dy).u(),Dirs::N));
     }
 

@@ -117,7 +117,7 @@ impl Vec2 {
     }
 
     #[allow(unused)]
-    pub fn b(&self)->Vec2
+    pub fn d(&self)->Vec2
     {
         Vec2::new(self.x  ,self.y+1)
     }

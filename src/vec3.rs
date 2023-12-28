@@ -27,11 +27,13 @@ impl Vec3 {
         z: 1,
     };        
     
+    #[allow(unused)]
     pub fn len(&self)->f64
     {
         ((self.x*self.x + self.y*self.y + self.z*self.z) as f64).sqrt()
     }
 
+    #[allow(unused)]
     pub fn normalize(&self)->Self
     {
         let l = self.len();
@@ -43,14 +45,16 @@ impl Vec3 {
                 z : (self.z as f64 / l) as i64,    
             }
         }
-        self.clone()
+        *self
     }
 
+    #[allow(unused)]
     pub fn dot(a: &Vec3, b: &Vec3)->i64 
     {
-        return a.x * b.x + a.y * b.y + a.z * b.z;
+        a.x * b.x + a.y * b.y + a.z * b.z
     }
 
+    #[allow(unused)]
     pub fn cross(a: &Vec3, b: &Vec3)->Self
     {
         Vec3 {
@@ -59,6 +63,8 @@ impl Vec3 {
             z: a.x * b.y - a.y * b.x,
         }
     }
+
+    #[allow(unused)]
     pub fn add(&self,other:&Vec3)->Vec3
     {
         Vec3
@@ -69,6 +75,7 @@ impl Vec3 {
         }
     }
 
+    #[allow(unused)]
     pub fn sub(&self,other:&Vec3)->Self
     {
         Vec3

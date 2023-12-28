@@ -251,7 +251,7 @@ impl World
              */
         }
 
-        if print { println!(""); }
+        if print { println!(); }
         
         //let mut memo = HashMap::new();
         let mut sum2 = 0;

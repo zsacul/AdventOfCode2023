@@ -128,7 +128,7 @@ impl World
                             let mut r = 0;
                             r = r.max(self.go(pos.r(),Dirs::E,steps+1));                            
                             r = r.max(self.go(pos.u(),Dirs::N,steps+1));
-                            r = r.max(self.go(pos.b(),Dirs::S,steps+1));
+                            r = r.max(self.go(pos.d(),Dirs::S,steps+1));
                             r
                         },
                         Dirs::W =>
@@ -136,13 +136,13 @@ impl World
                             let mut r = 0;
                             r = r.max(self.go(pos.l(),Dirs::W,steps+1));                            
                             r = r.max(self.go(pos.u(),Dirs::N,steps+1));
-                            r = r.max(self.go(pos.b(),Dirs::S,steps+1));
+                            r = r.max(self.go(pos.d(),Dirs::S,steps+1));
                             r
                         },
                         Dirs::S =>
                         {
                             let mut r = 0;
-                            r = r.max(self.go(pos.b(),Dirs::S,steps+1));                            
+                            r = r.max(self.go(pos.d(),Dirs::S,steps+1));                            
                             r = r.max(self.go(pos.l(),Dirs::W,steps+1));
                             r = r.max(self.go(pos.r(),Dirs::E,steps+1));
                             r
@@ -152,7 +152,7 @@ impl World
             },
             '>' => if dir==Dirs::W { 0 } else { self.go(pos.r(),Dirs::E,steps+1) },
             '<' => if dir==Dirs::E { 0 } else { self.go(pos.l(),Dirs::W,steps+1) },
-            'v' => if dir==Dirs::N { 0 } else { self.go(pos.b(),Dirs::S,steps+1) },
+            'v' => if dir==Dirs::N { 0 } else { self.go(pos.d(),Dirs::S,steps+1) },
             _   =>  panic!("wrong char [{}]",c) ,
         };
 
@@ -197,7 +197,7 @@ impl World
                             let mut r = 0;
                             r = r.max(self.go2(pos.r(),Dirs::E,steps+1));                            
                             r = r.max(self.go2(pos.u(),Dirs::N,steps+1));
-                            r = r.max(self.go2(pos.b(),Dirs::S,steps+1));
+                            r = r.max(self.go2(pos.d(),Dirs::S,steps+1));
                             r
                         },
                         Dirs::W =>
@@ -205,13 +205,13 @@ impl World
                             let mut r = 0;
                             r = r.max(self.go2(pos.l(),Dirs::W,steps+1));                            
                             r = r.max(self.go2(pos.u(),Dirs::N,steps+1));
-                            r = r.max(self.go2(pos.b(),Dirs::S,steps+1));
+                            r = r.max(self.go2(pos.d(),Dirs::S,steps+1));
                             r
                         },
                         Dirs::S =>
                         {
                             let mut r = 0;
-                            r = r.max(self.go2(pos.b(),Dirs::S,steps+1));                            
+                            r = r.max(self.go2(pos.d(),Dirs::S,steps+1));                            
                             r = r.max(self.go2(pos.l(),Dirs::W,steps+1));
                             r = r.max(self.go2(pos.r(),Dirs::E,steps+1));
                             r

@@ -261,7 +261,7 @@ impl Pipes
     fn replace_s(&mut self,p:Vec2)
     {
         let right = Self::R_DIR.contains(self.elem(p.r()));
-        let down =  Self::D_DIR.contains(self.elem(p.b()));
+        let down =  Self::D_DIR.contains(self.elem(p.d()));
 
         let c = 
         if down
