@@ -6,6 +6,7 @@ mod dijkstria;
 //mod cyclic2;
 mod timer;
 mod vec2;
+mod vec3;
 mod day01;
 mod day02;
 mod day03;
@@ -29,7 +30,7 @@ mod day20;
 mod day21;
 mod day22;
 mod day23;
-//mod day24;
+mod day24;
 mod day25;
 
 
@@ -147,14 +148,12 @@ fn main() {
         //        let day20_data  = tools::read_1d_string("data/day20.txt");
         //     day20::solve(&day20_data);
     }
-    */
     {
         let _timer = Timer::new();
         let day21_data  = tools::read_1d_string("data/day21.txt");
         day21::solve(&day21_data);
     }
     
-    /*
     {
         let _timer = Timer::new();
         let day22_data  = tools::read_1d_string("data/day22.txt");       
@@ -170,6 +169,7 @@ fn main() {
         }).unwrap(); 
         child.join().unwrap();
     }
+    */
     
     
     {
@@ -178,6 +178,7 @@ fn main() {
         day24::solve(&day24_data);       
     }
     
+    /*
     {
         let _timer = Timer::new();
         let day25_data  = tools::read_1d_string("data/day25.txt");

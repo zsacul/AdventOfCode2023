@@ -187,5 +187,21 @@ impl Vec2 {
         }
     }
 
+    //cross product (scalar result)
+	fn cross(&self,o : Vec2)->i64
+	{
+		self.x*o.y - self.y*o.x
+	}
+
+	fn is_cross(&self,o : Vec2)->bool
+	{
+		self.x * o.y >= self.y*o.x
+	}
+
+	fn dot(&self,o : Vec2)->i64
+	{
+		self.x*o.x + self.y*o.y
+	}
+
 }
 

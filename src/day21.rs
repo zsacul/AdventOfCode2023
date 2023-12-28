@@ -221,7 +221,7 @@ impl World
     fn calc3(&mut self,steps:i64)->usize
     {
         let print = false;
-        let s = 65;
+        let s = self.dx/2;
         
         let ll = 2*s+1;
         let nn = (steps+2*s)/ll;
@@ -231,22 +231,28 @@ impl World
         let even = self.count3(-nn+2,0,s,steps as usize);
         let odd  = self.count3(-nn+3,0,s,steps as usize);
 
-/*
-        let mut sum1=0;
-        for yy in -nn..=nn
+        if steps<150
         {
-            for xx in -nn..=nn
+            return self.calc(steps as usize);
+            /*
+            let mut sum1=0;
+            for yy in -nn..=nn
             {
-                let ev = self.count(&h,xx,yy,s) as i64;        
-                sum1+=ev;
+                for xx in -nn..=nn
+                {
+                    let ev = self.count3(xx,yy,s ,steps as usize); 
+                    sum1+=ev;
 
-                if print { print!("[{:>5}]",ev); }
+                    if print { print!("[{:>5}]",ev); }
+                }
+                if print { println!(""); }
             }
-            if print { println!(""); }
+            return sum1;
+             */
         }
 
         if print { println!(""); }
-        */
+        
         //let mut memo = HashMap::new();
         let mut sum2 = 0;
 

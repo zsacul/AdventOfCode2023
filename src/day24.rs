@@ -1,26 +1,7 @@
-//Day22
-//part1:418
-//part2:70702
-//Elapsed: 214.37001 secs
-use std::collections::{HashMap,HashSet,VecDeque};
+//use std::collections::{HashMap,HashSet,VecDeque};
 use super::vec2::Vec2;
+use super::vec3::Vec3;
 
-#[derive(Hash, Eq, PartialEq, Debug, Copy, Clone)]
-struct Vec3{
-    x: i64,
-    y: i64,
-    z: i64,
-}
-
-impl Vec3 {
-    fn new(x:i64,y:i64,z:i64)->Vec3
-    {
-        Vec3
-        {
-            x,y,z
-        }
-    }
-}
 
 #[derive(Eq, PartialEq, Debug, Clone,Hash)]
 struct Voxel
@@ -86,21 +67,21 @@ impl Voxel
 // psz -34 = t3*(-4 - dxz)
 
 
- psx = t1*(-2 - dxx) + 19
- psy = t1*( 1 - dxy) + 13
- psz = t1*(-2 - dxz) + 30
- psx = t2*(-1 - dxx) + 18
- psy = t2*(-1 - dxy) + 19
- psz = t2*(-2 - dxz) + 22
- psx = t3*(-2 - dxx) + 20
- psy = t3*(-2 - dxy) + 25
- psz = t3*(-4 - dxz) + 34
+ //psx = t1*(-2 - dxx) + 19
+ //psy = t1*( 1 - dxy) + 13
+ //psz = t1*(-2 - dxz) + 30
+ //psx = t2*(-1 - dxx) + 18
+ //psy = t2*(-1 - dxy) + 19
+ //psz = t2*(-2 - dxz) + 22
+ //psx = t3*(-2 - dxx) + 20
+ //psy = t3*(-2 - dxy) + 25
+ //psz = t3*(-4 - dxz) + 34
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct Brick
 {
-    pos: Voxel,
-    dir: Voxel,
+    pos : Voxel,
+    dir : Voxel,
 }
 
 impl Brick {
@@ -117,12 +98,12 @@ impl Brick {
     fn print(&self)
     {
         println!("{} {} {}  {} {} {}",self.pos.x,self.pos.y,self.pos.z,self.dir.x,self.dir.y,self.dir.z);
-    }    
+    }
 }
 
 struct Space
 {  
-    pts     : Vec<Brick>,
+    points : Vec<Brick>,
 }
 
 impl Space {
@@ -130,7 +111,7 @@ impl Space {
     {
         Self 
         {
-             pts     : Vec::new(),
+             points : Vec::new(),
         }
     }
 
@@ -143,10 +124,9 @@ impl Space {
             let b = Voxel::from_str(pos[1]);
 
             let brick = Brick::new(a,b);
-            self.pts.push(brick);
+            self.points.push(brick);
         }
     }
-
 
     fn get_stone(x:i64,y:i64,z:i64,dx:i64,dy:i64,dz:i64)->(Vec3,Vec3)
     {
@@ -208,34 +188,60 @@ impl Space {
 
         (-1.0,-1.0,-1.0)
     }
-    
 
-    fn count(&mut self)->usize
+    fn plane_line_intersection(plane_p:Vec3, plane_n:Vec3, line_start:Vec3, line_end:Vec3)->Vec3
+    {
+        let plane_n =  plane_n.normalize();
+        let plane_d = - plane_n.x*plane_p.x - plane_n.y*plane_p.y - plane_n.z*plane_p.z;
+        let ad = line_start.x*plane_n.x + line_start.y*plane_n.y + line_start.z*plane_n.z;
+        let bd =   line_end.x*plane_n.x +   line_end.y*plane_n.y +   line_end.z*plane_n.z;
+        let t = (-plane_d - ad) / (bd - ad);
+        let line_start_to_end = line_end - line_start;
+        let line_to_intersect = line_start_to_end * t;
+        return line_start + line_to_intersect;
+    }
+
+    fn from_three_points(p1:Vec3,p2:Vec3,p3:Vec3)->(Vec3,Vec3)
+    {
+        let v1 = p2 - p1;
+        let v2 = p3 - p1;
+        let cp = Vec3::cross(&v1,&v2);
+        let a = cp.x;
+        let b = cp.y;
+        let c = cp.z;
+        let d = -(cp.x*p3.x + cp.y*p3.y + cp.z*p3.z);
+        let plane = Vec3::new(a,b,c);
+        let line = Vec3::new(p1.x,p1.y,p1.z);
+        (plane,line)
+    }
+
+    fn count(&mut self,from:i64,to:i64)->usize
     {
         let mut res = 0;
-        for a in 0..self.pts.len()
+        for a in 0..self.points.len()
         {
-            for b in a+1..self.pts.len()
+            for b in a+1..self.points.len()
             {
-                //self.pts[a].print();
-                //self.pts[b].print();
+                //self.points[a].print();
+                //self.points[b].print();
 
-                let p1 = Vec2::new(self.pts[a].pos.x as i64,self.pts[a].pos.y as i64);
-                let d1 = Vec2::new(self.pts[a].dir.x as i64,self.pts[a].dir.y as i64);
-                let p2 = Vec2::new(self.pts[b].pos.x as i64,self.pts[b].pos.y as i64);
-                let d2 = Vec2::new(self.pts[b].dir.x as i64,self.pts[b].dir.y as i64);
+                let p1 = Vec2::new(self.points[a].pos.x as i64,self.points[a].pos.y as i64);
+                let d1 = Vec2::new(self.points[a].dir.x as i64,self.points[a].dir.y as i64);
+                let p2 = Vec2::new(self.points[b].pos.x as i64,self.points[b].pos.y as i64);
+                let d2 = Vec2::new(self.points[b].dir.x as i64,self.points[b].dir.y as i64);
 
-                let sx = (200000000000000i64,400000000000000i64);
-                let sy = (200000000000000i64,400000000000000i64);
+                let sx = (from,to);//(200000000000000i64,400000000000000i64);
+                let sy = (from,to);
 
                 let s = 2000000000000000i64;
+
                 let a1 = p1;
                 let a2 = Vec2::new(p1.x + s*d1.x , p1.y + s*d1.y);
-                let b1 = p2;//Vec2::new(p2.x - s*d2.x , p2.y - s*d2.y);
+                let b1 = p2;
                 let b2 = Vec2::new(p2.x + s*d2.x , p2.y + s*d2.y);
-                
 
                 let (fx,fy) = self.intersect(a1,a2,b1,b2);
+                //println!("{} {}",fx,fy);              
                 
                 if fx>=sx.0 as f64 && fx<=sx.1 as f64 && fy>=sy.0 as f64 && fy<=sy.1 as f64
                 {
@@ -260,7 +266,7 @@ impl Space {
         let st = Self::get_stone(0,0,0, d.x, d.y, d.z);
         let stone = Self::get_stone(p.x, p.y, p.z, d.x, d.y, d.z);
 
-            self.pts
+            self.points
             .iter().enumerate()
             .map(|(id,l)| 
                 {
@@ -394,29 +400,29 @@ impl Space {
 
     fn count2(&mut self)->i64
     {
-        let xx  = self.pts.iter().map(|x| x.pos.x).min().unwrap();
-        let yy  = self.pts.iter().map(|x| x.pos.y).min().unwrap();
-        let zz  = self.pts.iter().map(|x| x.pos.z).min().unwrap();
-        let xx2 = self.pts.iter().map(|x| x.pos.x).max().unwrap();
-        let yy2 = self.pts.iter().map(|x| x.pos.y).max().unwrap();
-        let zz2 = self.pts.iter().map(|x| x.pos.z).max().unwrap();
+        let xx  = self.points.iter().map(|x| x.pos.x).min().unwrap();
+        let yy  = self.points.iter().map(|x| x.pos.y).min().unwrap();
+        let zz  = self.points.iter().map(|x| x.pos.z).min().unwrap();
+        let xx2 = self.points.iter().map(|x| x.pos.x).max().unwrap();
+        let yy2 = self.points.iter().map(|x| x.pos.y).max().unwrap();
+        let zz2 = self.points.iter().map(|x| x.pos.z).max().unwrap();
 
-        //self.pts.iter_mut().for_each(|v| { v.pos.z+=v.dir.x; 
+        //self.points.iter_mut().for_each(|v| { v.pos.z+=v.dir.x; 
                                           // v.pos.y+=v.dir.y; 
                                           // v.pos.z+=v.dir.z; });
 
         //println!("{} {} {} ",xx,yy,zz);
         //println!("{} {} {} ",xx2-xx,yy2-yy,zz2-zz);
         
-        for a in 0..self.pts.len()
+        for a in 0..self.points.len()
         {
             let s = 1300;
-            let mut p = self.pts[a].pos.clone();
-            let off   = self.pts[a].dir.clone();
+            let mut p = self.points[a].pos.clone();
+            let off   = self.points[a].dir.clone();
 
           //  println!("{:?} {:?}",p,off);
 
-            println!("{}/{}",a,self.pts.len());
+            println!("{}/{}",a,self.points.len());
 
             let timi = 5;
             p.x-=off.x*2;//(timi/2);
@@ -464,21 +470,37 @@ impl Space {
         }
         0
     }
+
+    fn count3(&mut self)->i64
+    {
+        let first = self.points[0].clone();
+
+        for p in self.points.iter_mut()
+        {
+            p.pos.x-=first.pos.x;
+            p.pos.y-=first.pos.y;
+            p.pos.z-=first.pos.z;
+            p.dir.x-=first.dir.x;
+            p.dir.y-=first.dir.y;
+            p.dir.z-=first.dir.z;
+        }
+        0
+    }
 }
 
 
-fn part1(data:&[String])->usize
+fn part1(data:&[String],f:i64,t:i64)->usize
 {
     let mut w = Space::new();
     w.fill(data);
-    w.count()
+    w.count(f,t)
 }
 
 fn part2(data:&[String])->i64
 {
     let mut w = Space::new();
     w.fill(data);
-    w.count2()
+    w.count3()
 }
 
 fn partt(data:&[String])->i64
@@ -493,9 +515,8 @@ fn partt(data:&[String])->i64
 pub fn solve(data:&[String])
 {    
     println!("Day24");
-    println!("part1:{}",part1(data));
-    println!("part2:{}",part2(data));
-    //partt(data);
+    println!("part1:{}",part1(data,200000000000000i64,400000000000000i64));
+    println!("part2:{}",part2(data));    
 }
 
 #[allow(unused)]
@@ -514,7 +535,7 @@ fn get_test_data()->Vec<String>
 fn test1()
 {
     let v = get_test_data();
-    assert_eq!(part1(&v),2);
+    assert_eq!(part1(&v,7,27),2);
 }
 
 #[test]
