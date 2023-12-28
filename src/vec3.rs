@@ -64,6 +64,92 @@ impl Vec3 {
         }
     }
 
+
+    #[allow(unused)]
+    pub fn l(&self)->Vec3
+    {
+        Vec3::new(self.x-1,self.y  ,self.z  )
+    }
+
+    #[allow(unused)]
+    pub fn r(&self)->Vec3
+    {
+        Vec3::new(self.x+1,self.y  ,self.z  )
+    }
+
+    #[allow(unused)]
+    pub fn u(&self)->Vec3
+    {
+        Vec3::new(self.x  ,self.y-1,self.z  )
+    }
+
+    #[allow(unused)]
+    pub fn d(&self)->Vec3
+    {
+        Vec3::new(self.x  ,self.y+1,self.z  )
+    }    
+
+    #[allow(unused)]
+    pub fn f(&self)->Vec3
+    {
+        Vec3::new(self.x  ,self.y  ,self.z-1)
+    }    
+
+    #[allow(unused)]
+    pub fn b(&self)->Vec3
+    {
+        Vec3::new(self.x  ,self.y  ,self.z+1)
+    }    
+
+    #[allow(unused)]
+    pub fn around6(&self)->Vec<Vec3>
+    {
+         vec![
+            self.u(),
+            self.l(),
+            self.b(),
+            self.f(),
+            self.r(),
+            self.d(),
+         ]
+    }
+
+    #[allow(unused)]
+    pub fn around27(&self)->Vec<Vec3>
+    {
+         vec![           
+            Vec3::new(self.x-1,self.y-1,self.z+1), Vec3::new(self.x  ,self.y-1,self.z+1), Vec3::new(self.x+1,self.y-1,self.z+1),
+            Vec3::new(self.x-1,self.y  ,self.z+1), Vec3::new(self.x  ,self.y  ,self.z+1), Vec3::new(self.x+1,self.y  ,self.z+1),
+            Vec3::new(self.x-1,self.y+1,self.z+1), Vec3::new(self.x  ,self.y+1,self.z+1), Vec3::new(self.x+1,self.y+1,self.z+1),            
+
+            Vec3::new(self.x-1,self.y-1,self.z  ), Vec3::new(self.x  ,self.y-1,self.z  ), Vec3::new(self.x+1,self.y-1,self.z  ),
+            Vec3::new(self.x-1,self.y  ,self.z  ), Vec3::new(self.x  ,self.y  ,self.z  ), Vec3::new(self.x+1,self.y  ,self.z  ),
+            Vec3::new(self.x-1,self.y+1,self.z  ), Vec3::new(self.x  ,self.y+1,self.z  ), Vec3::new(self.x+1,self.y+1,self.z  ),            
+
+            Vec3::new(self.x-1,self.y-1,self.z-1), Vec3::new(self.x  ,self.y-1,self.z-1), Vec3::new(self.x+1,self.y-1,self.z-1),
+            Vec3::new(self.x-1,self.y  ,self.z-1), Vec3::new(self.x  ,self.y  ,self.z-1), Vec3::new(self.x+1,self.y  ,self.z-1),
+            Vec3::new(self.x-1,self.y+1,self.z-1), Vec3::new(self.x  ,self.y+1,self.z-1), Vec3::new(self.x+1,self.y+1,self.z-1),
+         ]
+    }
+
+    #[allow(unused)]
+    pub fn around26(&self)->Vec<Vec3>
+    {
+         vec![           
+            Vec3::new(self.x-1,self.y-1,self.z+1), Vec3::new(self.x  ,self.y-1,self.z+1), Vec3::new(self.x+1,self.y-1,self.z+1),
+            Vec3::new(self.x-1,self.y  ,self.z+1), Vec3::new(self.x  ,self.y  ,self.z+1), Vec3::new(self.x+1,self.y  ,self.z+1),
+            Vec3::new(self.x-1,self.y+1,self.z+1), Vec3::new(self.x  ,self.y+1,self.z+1), Vec3::new(self.x+1,self.y+1,self.z+1),            
+
+            Vec3::new(self.x-1,self.y-1,self.z  ), Vec3::new(self.x  ,self.y-1,self.z  ), Vec3::new(self.x+1,self.y-1,self.z  ),
+            Vec3::new(self.x-1,self.y  ,self.z  ),                                        Vec3::new(self.x+1,self.y  ,self.z  ),
+            Vec3::new(self.x-1,self.y+1,self.z  ), Vec3::new(self.x  ,self.y+1,self.z  ), Vec3::new(self.x+1,self.y+1,self.z  ),            
+
+            Vec3::new(self.x-1,self.y-1,self.z-1), Vec3::new(self.x  ,self.y-1,self.z-1), Vec3::new(self.x+1,self.y-1,self.z-1),
+            Vec3::new(self.x-1,self.y  ,self.z-1), Vec3::new(self.x  ,self.y  ,self.z-1), Vec3::new(self.x+1,self.y  ,self.z-1),
+            Vec3::new(self.x-1,self.y+1,self.z-1), Vec3::new(self.x  ,self.y+1,self.z-1), Vec3::new(self.x+1,self.y+1,self.z-1),
+         ]
+    }
+
     #[allow(unused)]
     pub fn add(&self,other:&Vec3)->Vec3
     {
@@ -85,6 +171,12 @@ impl Vec3 {
             z: self.z - other.z,
         }
     }
+
+
+
+
+
+
 }
 
 impl Add for Vec3 

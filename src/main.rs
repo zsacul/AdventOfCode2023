@@ -7,6 +7,7 @@ mod dijkstria;
 mod timer;
 mod vec2;
 mod vec3;
+mod vec3f;
 mod day01;
 mod day02;
 mod day03;

@@ -122,7 +122,6 @@ impl Vec2 {
         Vec2::new(self.x  ,self.y+1)
     }
 
-
     #[allow(unused)]
     pub fn distance2(&self,x:i64,y:i64)->i64
     {
@@ -187,17 +186,19 @@ impl Vec2 {
         }
     }
 
-    //cross product (scalar result)
+    #[allow(unused)]
 	fn cross(&self,o : Vec2)->i64
 	{
 		self.x*o.y - self.y*o.x
 	}
 
+    #[allow(unused)]
 	fn is_cross(&self,o : Vec2)->bool
 	{
 		self.x * o.y >= self.y*o.x
 	}
 
+    #[allow(unused)]
 	fn dot(&self,o : Vec2)->i64
 	{
 		self.x*o.x + self.y*o.y

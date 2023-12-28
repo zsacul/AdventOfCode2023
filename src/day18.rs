@@ -529,9 +529,9 @@ impl Pipes
 
         return Self::sholeace_polygon_area(points) + len/2 +1;
 
-        let minx = points.iter().map(|k| k.x).min().unwrap();
+        //let minx = points.iter().map(|k| k.x).min().unwrap();
         let miny = points.iter().map(|k| k.y).min().unwrap();
-        let maxx = points.iter().map(|k| k.x).max().unwrap();
+        //let maxx = points.iter().map(|k| k.x).max().unwrap();
         let maxy = points.iter().map(|k| k.y).max().unwrap();
 
         // println!("minx:{} miny:{} maxx:{} maxy:{}",minx,miny,maxx,maxy);
@@ -563,7 +563,7 @@ impl Pipes
         let mut on = false;
         let mut res = 0;
         let mut last = 0;
-        let mut last_on = on;
+//      let last_on = on;
 
         //let mut wind = 0;
         //let mut lastX = 0;
@@ -617,7 +617,7 @@ impl Pipes
                 {
                     last = p1.x;
                 }                            
-                last_on = on;
+                //last_on = on;
 
                 prev = c;             
             }
@@ -642,7 +642,7 @@ impl Pipes
         let mut last_on = on;
 
         let mut wind = 0;
-        let mut lastX = 0;
+        let mut last_x = 0;
 
         for (p1,p2) in ups
         {
@@ -664,15 +664,15 @@ impl Pipes
                     last = p1.x;
                     last_on = on;
                 }
-                lastX = p1.x;
+                last_x = p1.x;
             }
         }
 
         on = wind!=0;
 
-        if last!=lastX && on
+        if last!=last_x && on
         {
-            res += lastX-last+1;
+            res += last_x-last+1;
         }
         res as usize
     }

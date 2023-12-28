@@ -2,7 +2,6 @@
 use super::vec2::Vec2;
 use super::vec3::Vec3;
 
-
 #[derive(Eq, PartialEq, Debug, Clone,Hash)]
 struct Voxel
 {
@@ -128,6 +127,11 @@ impl Space {
         }
     }
 
+    fn get_stone_v(v:Brick)->(Vec3,Vec3)
+    {
+        Self::get_stone(v.pos.x,v.pos.y,v.pos.z,v.dir.x,v.dir.y,v.dir.z)
+    }
+
     fn get_stone(x:i64,y:i64,z:i64,dx:i64,dy:i64,dz:i64)->(Vec3,Vec3)
     {
         let s= 2000000000000000i64;
@@ -201,7 +205,7 @@ impl Space {
         return line_start + line_to_intersect;
     }
 
-    fn from_three_points(p1:Vec3,p2:Vec3,p3:Vec3)->(Vec3,Vec3)
+    fn plane_from_three_points(p1:Vec3,p2:Vec3,p3:Vec3)->(Vec3,Vec3)
     {
         let v1 = p2 - p1;
         let v2 = p3 - p1;
@@ -209,7 +213,7 @@ impl Space {
         let a = cp.x;
         let b = cp.y;
         let c = cp.z;
-        let d = -(cp.x*p3.x + cp.y*p3.y + cp.z*p3.z);
+        //let d = -(cp.x*p3.x + cp.y*p3.y + cp.z*p3.z);
         let plane = Vec3::new(a,b,c);
         let line = Vec3::new(p1.x,p1.y,p1.z);
         (plane,line)
@@ -222,15 +226,12 @@ impl Space {
         {
             for b in a+1..self.points.len()
             {
-                //self.points[a].print();
-                //self.points[b].print();
-
                 let p1 = Vec2::new(self.points[a].pos.x as i64,self.points[a].pos.y as i64);
                 let d1 = Vec2::new(self.points[a].dir.x as i64,self.points[a].dir.y as i64);
                 let p2 = Vec2::new(self.points[b].pos.x as i64,self.points[b].pos.y as i64);
                 let d2 = Vec2::new(self.points[b].dir.x as i64,self.points[b].dir.y as i64);
 
-                let sx = (from,to);//(200000000000000i64,400000000000000i64);
+                let sx = (from,to);
                 let sy = (from,to);
 
                 let s = 2000000000000000i64;
@@ -241,7 +242,6 @@ impl Space {
                 let b2 = Vec2::new(p2.x + s*d2.x , p2.y + s*d2.y);
 
                 let (fx,fy) = self.intersect(a1,a2,b1,b2);
-                //println!("{} {}",fx,fy);              
                 
                 if fx>=sx.0 as f64 && fx<=sx.1 as f64 && fy>=sy.0 as f64 && fy<=sy.1 as f64
                 {
@@ -396,6 +396,7 @@ impl Space {
 */      
     }
 
+    /*
     fn count2(&mut self)->i64
     {
         let xx  = self.points.iter().map(|x| x.pos.x).min().unwrap();
@@ -468,6 +469,7 @@ impl Space {
         }
         0
     }
+     */
 
     fn count3(&mut self)->i64
     {
@@ -482,6 +484,31 @@ impl Space {
             p.dir.y-=first.dir.y;
             p.dir.z-=first.dir.z;
         }
+
+        let first  = self.points[0].clone();
+        let second = self.points[1].clone();
+        let third  = self.points[2].clone();
+        let fourth = self.points[3].clone();
+        let p0 = Vec3::new(first.pos.x,first.pos.y,first.pos.z);
+        let p1 = Vec3::new(second.pos.x,second.pos.y,second.pos.z);
+        let p2 = Vec3::new(second.pos.x + second.dir.x,
+                                 second.pos.y + second.dir.y,
+                                 second.pos.z + second.dir.z);                                 
+
+        let (normal, plane_point) = Self::plane_from_three_points(p0,p1,p2);
+
+        println!("n {:?} p {:?}",normal,plane_point);
+
+        //third
+        //fourth
+        let p3 = Self::get_stone_v(third);
+        let p4 = Self::get_stone_v(fourth);
+
+        let i1 = Self::plane_line_intersection(plane_point, normal, p3.0, p3.1);
+        let i2 = Self::plane_line_intersection(plane_point, normal, p4.0, p4.1);
+
+        println!("i1 = {} {} {}",i1.x,i1.y,i1.z);
+        println!("i2 = {} {} {}",i2.x,i2.y,i2.z);
         0
     }
 }
