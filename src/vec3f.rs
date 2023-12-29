@@ -1,4 +1,4 @@
-use std::ops::{Add,Sub,Mul};
+use std::ops::{Add,Sub,Mul,Div,Neg};
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Vec3f {
     pub x: f64,
@@ -167,6 +167,41 @@ impl Vec3f {
       //To find the closest point on the line, we just add vVector3 to the original end point vA
       a + vector2*t
     }
+
+    pub fn plane_line_intersection(plane_p:Vec3f, plane_n:Vec3f, pos:Vec3f, dir:Vec3f)->(Vec3f,f64)
+    {
+        let a = Self::dot(&(plane_p-pos),&plane_n);
+        let b = Self::dot(          &dir,&plane_n);
+        let t = a/b;
+        let p = pos + dir*t;
+        (p,t)
+    }
+
+    pub fn plane_line_intersection2(plane_p:Vec3f, plane_n:Vec3f, line_start:Vec3f, line_end:Vec3f)->(Vec3f,f64)
+    {
+        let plane_n =  plane_n.normalize();
+        let plane_d = - plane_n.x*plane_p.x - plane_n.y*plane_p.y - plane_n.z*plane_p.z;
+        let ad = line_start.x*plane_n.x + line_start.y*plane_n.y + line_start.z*plane_n.z;
+        let bd =   line_end.x*plane_n.x +   line_end.y*plane_n.y +   line_end.z*plane_n.z;
+        let t = (-plane_d - ad) / (bd - ad);
+        let line_start_to_end = line_end - line_start;
+        let line_to_intersect = line_start_to_end * t;
+        (line_start + line_to_intersect,t)
+    }
+
+    pub fn plane_from_three_points(p1:Vec3f,p2:Vec3f,p3:Vec3f)->(Vec3f,Vec3f)
+    {
+        let v1 = p2 - p1;
+        let v2 = p3 - p1;
+        let cp = Vec3f::cross(&v1,&v2);
+        let a = cp.x;
+        let b = cp.y;
+        let c = cp.z;
+        //let d = -(cp.x*p3.x + cp.y*p3.y + cp.z*p3.z);
+        let plane = Vec3f::new(a,b,c);
+        let line = Vec3f::new(p1.x,p1.y,p1.z);
+        (plane,line)
+    }
 }
 
 impl Add for Vec3f
@@ -207,3 +242,71 @@ impl Mul<f64> for Vec3f
         }
     }
 }
+
+impl Div<f64> for Vec3f
+{
+    type Output = Self;
+
+    fn div(self, n: f64) -> Self {
+        Self {
+            x: self.x / n,
+            y: self.y / n,
+            z: self.z / n,
+        }
+    }
+}
+
+// It also implements unary operators like - a where a is of
+// type Vec3 or &Vec3.
+macro_rules! impl_unary_operations {
+    // $VectorType is something like `Vec3`
+    // $Operation is something like `Neg`
+    // $op_fn is something like `neg`
+    // $op_symbol is something like `-`
+    ($VectorType:ident $Operation:ident $op_fn:ident $op_symbol:tt) => {
+  
+      // Implement the unary operator for references
+      impl<'a> $Operation for &'a $VectorType {
+        type Output = $VectorType;
+  
+        fn $op_fn(self) -> Vec3f {
+          $VectorType {
+            x: $op_symbol self.x,
+            y: $op_symbol self.y,
+            z: $op_symbol self.z,
+          }
+        }
+      }
+  
+      // Have the operator on values forward through to the implementation
+      // above
+      impl $Operation for $VectorType {
+        type Output = $VectorType;
+  
+        #[inline]
+        fn $op_fn(self) -> Vec3f {
+          $op_symbol &self
+        }
+      }
+    };
+  }
+
+impl_unary_operations!(Vec3f Neg neg -);
+
+
+#[test]
+fn plane_test()
+{
+/*
+    x1 = -1 y1 =  w z1 = 1 
+    x2 =  0 y2 = -3 z2 = 2 
+    x3 =  1 y3 =  1 z3 = -4 
+    Output: equation of plane is 26 x + 7 y + 9 z + 3 = 0.
+    Input: 
+    x1 = 2, y1 =  1, z1 = -1, 1 
+    x2 = 0, y2 = -2, z2 =  0 
+    x3 = 1, y3 = -1, z3 =  2 
+    Output: equation of plane is -7 x + 5 y + 1 z + 10 = 0.
+ */
+}
+

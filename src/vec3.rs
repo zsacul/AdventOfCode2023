@@ -1,6 +1,9 @@
 use std::ops::{Add,Sub,Mul};
+use super::vec3f::Vec3f;   
+
 #[derive(Hash, Eq, PartialEq, Debug, Copy, Clone)]
-pub struct Vec3 {
+pub struct Vec3 
+{
     pub x: i64,
     pub y: i64,
     pub z: i64,
@@ -15,18 +18,31 @@ impl Vec3 {
         }
     }
 
+    #[allow(unused)]
     pub const ZERO: Vec3 = Vec3 {
         x: 0,
         y: 0,
         z: 0,
     };
 
+    #[allow(unused)]
     pub const ONE: Vec3 = Vec3 {
         x: 1,
         y: 1,
         z: 1,
     };        
     
+    #[allow(unused)]
+    pub fn to_vec3f(&self)->Vec3f
+    {
+        Vec3f
+        {
+            x: self.x as f64,
+            y: self.y as f64,
+            z: self.z as f64,
+        }
+    }
+
     #[allow(unused)]
     pub fn len(&self)->f64
     {

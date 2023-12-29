@@ -1,6 +1,9 @@
+use std::collections::HashSet;
+
 //use std::collections::{HashMap,HashSet,VecDeque};
 use super::vec2::Vec2;
 use super::vec3::Vec3;
+use super::vec3f::Vec3f;
 
 #[derive(Eq, PartialEq, Debug, Clone,Hash)]
 struct Voxel
@@ -17,6 +20,16 @@ impl Voxel
         Self 
         {
             x,y,z
+        }
+    }
+
+    fn to_vec3f(&self)->Vec3f
+    {
+        Vec3f
+        {
+            x: self.x as f64,
+            y: self.y as f64,
+            z: self.z as f64,
         }
     }
 
@@ -127,26 +140,7 @@ impl Space {
         }
     }
 
-    fn get_stone_v(v:Brick)->(Vec3,Vec3)
-    {
-        Self::get_stone(v.pos.x,v.pos.y,v.pos.z,v.dir.x,v.dir.y,v.dir.z)
-    }
-
-    fn get_stone(x:i64,y:i64,z:i64,dx:i64,dy:i64,dz:i64)->(Vec3,Vec3)
-    {
-        let s= 2000000000000000i64;
-        let a = Vec3::new(x    ,y,z);
-        let b = Vec3::new(x+s*dx,y+s*dy,z+s*dz);
-        (a,b)
-    }
-
-    fn get_stone_raw(x:i64,y:i64,z:i64,dx:i64,dy:i64,dz:i64)->(Vec3,Vec3)
-    {        
-        let a = Vec3::new(x    ,y,z);
-        let b = Vec3::new(dx,dy,dz);
-        (a,b)
-    }
-  
+ 
     fn intersect(&self,a1:Vec2,a2:Vec2,b1:Vec2,b2:Vec2)->(f64,f64)
     {
         let s1_x = a2.x as f64 - a1.x as f64;
@@ -168,57 +162,6 @@ impl Space {
         (-1.0,-1.0)
     }
  
-    fn intersect3d(a1:Vec3,a2:Vec3,b1:Vec3,b2:Vec3)->(f64,f64,f64)
-    {
-        let s1_x = a2.x as f64 - a1.x as f64;
-        let s1_y = a2.y as f64 - a1.y as f64;
-        let s1_z = a2.z as f64 - a1.z as f64;
-
-        let s2_x = b2.x as f64 - b1.x as f64;
-        let s2_y = b2.y as f64 - b1.y as f64;
-        //let s2_z = b2.z as f64 - b1.z as f64;
-
-        let s = (-s1_y * (a1.x as f64 - b1.x as f64) + s1_x * (a1.y as f64 - b1.y as f64)) / (-s2_x * s1_y + s1_x * s2_y);
-        let t = ( s2_x * (a1.y as f64 - b1.y as f64) - s2_y * (a1.x as f64 - b1.x as f64)) / (-s2_x * s1_y + s1_x * s2_y);
-
-        if (0.0..=1.0).contains(&s) && (0.0..=1.0).contains(&t)
-        {
-            let i_x = a1.x as f64 + (t * s1_x);
-            let i_y = a1.y as f64 + (t * s1_y);
-            let i_z = a1.z as f64 + (t * s1_z);
-
-            return (i_x,i_y,i_z);
-        }
-
-        (-1.0,-1.0,-1.0)
-    }
-
-    fn plane_line_intersection(plane_p:Vec3, plane_n:Vec3, line_start:Vec3, line_end:Vec3)->Vec3
-    {
-        let plane_n =  plane_n.normalize();
-        let plane_d = - plane_n.x*plane_p.x - plane_n.y*plane_p.y - plane_n.z*plane_p.z;
-        let ad = line_start.x*plane_n.x + line_start.y*plane_n.y + line_start.z*plane_n.z;
-        let bd =   line_end.x*plane_n.x +   line_end.y*plane_n.y +   line_end.z*plane_n.z;
-        let t = (-plane_d - ad) / (bd - ad);
-        let line_start_to_end = line_end - line_start;
-        let line_to_intersect = line_start_to_end * t;
-        return line_start + line_to_intersect;
-    }
-
-    fn plane_from_three_points(p1:Vec3,p2:Vec3,p3:Vec3)->(Vec3,Vec3)
-    {
-        let v1 = p2 - p1;
-        let v2 = p3 - p1;
-        let cp = Vec3::cross(&v1,&v2);
-        let a = cp.x;
-        let b = cp.y;
-        let c = cp.z;
-        //let d = -(cp.x*p3.x + cp.y*p3.y + cp.z*p3.z);
-        let plane = Vec3::new(a,b,c);
-        let line = Vec3::new(p1.x,p1.y,p1.z);
-        (plane,line)
-    }
-
     fn count(&mut self,from:i64,to:i64)->usize
     {
         let mut res = 0;
@@ -255,262 +198,108 @@ impl Space {
 
     fn int(f:f64)->bool
     {
-        let i = (f+0.5) as i64;
-        //let ii = ((i as f64) - f).abs();
-        //println!("ii={} ",ii);
-        ((i as f64) - f).abs()<0.001
+        f.round() == f
     }
 
-    fn try_throw(&mut self,a:usize,p:Vec3,d:Vec3)->bool
+    fn round(f:f64)->i64
     {
-        let st = Self::get_stone(0,0,0, d.x, d.y, d.z);
-        let stone = Self::get_stone(p.x, p.y, p.z, d.x, d.y, d.z);
-
-            self.points
-            .iter().enumerate()
-            .map(|(id,l)| 
-                {
-                    let (b1,b2) = Self::get_stone(l.pos.x, l.pos.y, l.pos.z, 
-                                                            l.dir.x, l.dir.y, l.dir.z);
-                    (id,Self::intersect3d(stone.0,stone.1,b1,b2))
-                }
-            ).all(
-            |(id,(x,y,z))|
-            {
-                if id==a { return true; }
-
-                if x==-1.0 && y==-1.0 && z==-1.0 
-                {
-                    return false;
-                }
-                if !(Self::int(x) && Self::int(y) && Self::int(z))                 
-                { 
-                    //if !Self::int(x) {println!("not int x:{}",x); }
-                    //if !Self::int(y) {println!("not int y:{}",y); }
-                    //if !Self::int(z) {println!("not int z:{}",z); }
-                    
-                    return false;
-                }
-
-                let dx = x - p.x as f64;
-                let dy = y - p.y as f64;
-                let dz = z - p.z as f64;
-
-                let mut t = -1.0;
-
-                if dx.abs() > dy.abs()
-                {
-                    if dx.abs() > dz.abs()
-                    {
-                        t = (x-p.x as f64)/dx;
-                    }
-                        else
-                    {
-                        t = (z-p.z as f64)/dz;
-                    }
-                }
-                    else 
-                {
-                    if dy.abs() > dz.abs()
-                    {
-                        t = (y-p.y as f64)/dy;
-                    }
-                        else 
-                    {
-                        t = (z-p.z as f64)/dz;
-                    }
-                }
-
-                if t>=0.0 && t<=1.0   
-                {
-                    let tx = t*(st.1.x as f64);
-                    let ty = t*(st.1.y as f64);
-                    let tz = t*(st.1.z as f64);
-
-                    return Self::int(tx) &&
-                           Self::int(ty) &&
-                           Self::int(tz);
-
-                    //return true;
-                    //let m = t*2000000000000000.0f64;
-                    //return Self::int(&m);
-                }
-
-                false
-            }
-            )
-
-  /*
-        if i.iter()
-            .all(|(x,y,z)| !(*x==-1.0 && *y==-1.0 && *z==-1.0) && 
-                                              Self::int(x) && Self::int(y) && Self::int(z))
-        {
-            for (sx,sy,sz) in i
-            {
-                let dx = (sx - p.x as f64);
-                let dy = (sy - p.y as f64);
-                let dz = (sz - p.z as f64);
-
-                let mut t = -1.0;
-                if dx.abs() > dy.abs()
-                {
-                    if dx.abs() > dz.abs()
-                    {
-                        t = (sx-p.x as f64)/dx;
-                    }
-                      else
-                    {
-                        t = (sz-p.z as f64)/dz;
-                    }
-                }
-                  else 
-                {
-                    if dy.abs() > dz.abs()
-                    {
-                        t = (sy-p.y as f64)/dy;
-                    }
-                      else 
-                    {
-                        t = (sz-p.z as f64)/dz;
-                    }
-                }
-
-                if t<0.0 || t>1.0
-                {
-                    return false;
-                }
-                //println!("{} {} {}",sol.0,sol.1,sol.2);
-            }
-
-            return true;
-        }
-        */
-
-        
-      //println!("{:?}",i);
-      //false
-      /*
-
-
-      return true;
-*/      
+        (f.round()) as i64
     }
-
-    /*
-    fn count2(&mut self)->i64
+  
+    fn count4(&mut self,id1:usize,id2:usize,id3:usize,id4:usize)->(Vec3f,Vec3f)
     {
-        let xx  = self.points.iter().map(|x| x.pos.x).min().unwrap();
-        let yy  = self.points.iter().map(|x| x.pos.y).min().unwrap();
-        let zz  = self.points.iter().map(|x| x.pos.z).min().unwrap();
-        let xx2 = self.points.iter().map(|x| x.pos.x).max().unwrap();
-        let yy2 = self.points.iter().map(|x| x.pos.y).max().unwrap();
-        let zz2 = self.points.iter().map(|x| x.pos.z).max().unwrap();
+        let org = self.points[id1].clone();
+        let mut points_n = self.points.clone();
 
-        //self.points.iter_mut().for_each(|v| { v.pos.z+=v.dir.x; 
-                                          // v.pos.y+=v.dir.y; 
-                                          // v.pos.z+=v.dir.z; });
-
-        //println!("{} {} {} ",xx,yy,zz);
-        //println!("{} {} {} ",xx2-xx,yy2-yy,zz2-zz);
-        
-        for a in 0..self.points.len()
+        for p in points_n.iter_mut()
         {
-            let s = 1300;
-            let mut p = self.points[a].pos.clone();
-            let off   = self.points[a].dir.clone();
-
-          //  println!("{:?} {:?}",p,off);
-
-            println!("{}/{}",a,self.points.len());
-
-            let timi = 5;
-            p.x-=off.x*2;//(timi/2);
-            p.y-=off.y*2;//(timi/2);
-            p.z-=off.z*2;//(timi/2);
-
-            let ix = vec![0,-1,1,-2,2,-3,3,-4,4,-5,5,-6,6,-7,7,-8,8,-9,9,-10,10,-11,11,-12,12,-13,13];
-
-            for t in 0..s*timi
-            {                
-                for z in ix.iter()
-                {
-                    for y in ix.iter()
-                    {
-                        for x in ix.iter()
-                        {
-                            if *x==0 && *y==0 && *z==0
-                            {
-                                continue;
-                            }
-                            let pos = Vec3::new(p.x-x,p.y-y, p.z-z);
-                            let d   = Vec3::new(   *x,   *y,    *z);
-
-                            if self.try_throw(a,pos,d)
-                            {
-                                let rx = p.x - d.x;
-                                let ry = p.y - d.y;
-                                let rz = p.z - d.z;
-
-                                //if pos.x==24
-                                //if d.x==-3 && d.y==1
-                                {
-                                    println!("Yes {},{},{} {:?} = {}",pos.x,pos.y,pos.z,d,pos.x+pos.y+pos.z);
-                                }
-                                //return (rx+ry+rz) as i64;
-                            }
-                        }
-                    }                        
-                }      
-
-                p.x+=off.x;
-                p.y+=off.y;
-                p.z+=off.z;
-            }
-        }
-        0
-    }
-     */
-
-    fn count3(&mut self)->i64
-    {
-        let first = self.points[0].clone();
-
-        for p in self.points.iter_mut()
-        {
-            p.pos.x-=first.pos.x;
-            p.pos.y-=first.pos.y;
-            p.pos.z-=first.pos.z;
-            p.dir.x-=first.dir.x;
-            p.dir.y-=first.dir.y;
-            p.dir.z-=first.dir.z;
+            p.pos.x-=org.pos.x;
+            p.pos.y-=org.pos.y;
+            p.pos.z-=org.pos.z;
+            p.dir.x-=org.dir.x;
+            p.dir.y-=org.dir.y;
+            p.dir.z-=org.dir.z;
         }
 
-        let first  = self.points[0].clone();
-        let second = self.points[1].clone();
-        let third  = self.points[2].clone();
-        let fourth = self.points[3].clone();
+        let first  = points_n[id1].clone();
+        let second = points_n[id2].clone();
+        let third  = points_n[id3].clone();
+        let fourth = points_n[id4].clone();
+
         let p0 = Vec3::new(first.pos.x,first.pos.y,first.pos.z);
         let p1 = Vec3::new(second.pos.x,second.pos.y,second.pos.z);
         let p2 = Vec3::new(second.pos.x + second.dir.x,
                                  second.pos.y + second.dir.y,
                                  second.pos.z + second.dir.z);                                 
 
-        let (normal, plane_point) = Self::plane_from_three_points(p0,p1,p2);
+        let (normal, plane_point) = Vec3f::plane_from_three_points(p0.to_vec3f(),p1.to_vec3f(),p2.to_vec3f());
+        //let normal = normal.normalize();
 
-        println!("n {:?} p {:?}",normal,plane_point);
+        //println!("n {:?} p {:?}",normal,plane_point);
 
-        //third
-        //fourth
-        let p3 = Self::get_stone_v(third);
-        let p4 = Self::get_stone_v(fourth);
+        let p3 = ( third.pos.to_vec3f(), third.dir.to_vec3f());
+        let p4 = (fourth.pos.to_vec3f(),fourth.dir.to_vec3f());
 
-        let i1 = Self::plane_line_intersection(plane_point, normal, p3.0, p3.1);
-        let i2 = Self::plane_line_intersection(plane_point, normal, p4.0, p4.1);
+        let i1 = Vec3f::plane_line_intersection(plane_point, normal, p3.0, p3.1);
+        let i2 = Vec3f::plane_line_intersection(plane_point, normal, p4.0, p4.1);
 
-        println!("i1 = {} {} {}",i1.x,i1.y,i1.z);
-        println!("i2 = {} {} {}",i2.x,i2.y,i2.z);
+        let del = (i1.0-i2.0)/(i1.1-i2.1);
+        //del == -3, 1, 2
+        //println!("del = {:?}",del);
+
+        //println!("i1 = {:?}",i1);
+        //println!("i2 = {:?}",i2);
+
+        let del2 = del + org.dir.to_vec3f();
+        //println!("del2 = {:?}",del2);
+
+        let pos = i1.0 - del*i1.1;
+
+        let pos2 = pos + org.pos.to_vec3f();
+        //println!("pos2 = {:?}",pos2);
+
+        (pos2,del2)
+        //let final_point = Vec3::new(Self::round(pos2.x),Self::round(pos2.y),Self::round(pos2.z));
+        //println!("final = {} {} {}",final_point.x,final_point.y,final_point.z);
+        //final_point.x + final_point.y + final_point.z
+    }
+
+    fn count3(&mut self)->i64
+    {
+        let n = self.points.len();
+        let mut was = HashSet::new();
+
+        for a in 0..n
+        {
+            //println!("a={}",a);
+            for b in a+1..n
+            {
+                for c in b+1..n
+                {
+                    for d in c+1..n
+                    {
+                        let (pos,del) = self.count4(a,b,c,d);
+                        if Self::int(pos.x) && Self::int(pos.y) && Self::int(pos.z) &&
+                           Self::int(del.x) && Self::int(del.y) && Self::int(del.z)
+                        {
+                            let res = Self::round(pos.x) + Self::round(pos.y) + Self::round(pos.z);
+                            
+                            if !was.contains(&res)
+                            {
+                                was.insert(res);
+                                //println!("pos = {},{},{}",pos.x , pos.y , pos.z);
+                                //println!("del = {},{},{}",del.x , del.y , del.z);
+                                //println!("res = {}",res);
+                                return res;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         0
     }
+    
 }
 
 
@@ -563,22 +352,6 @@ fn test2()
 }
 
 
-#[test]
-fn test_i1()
-{
-    let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
-    let (b1,b2) = Space::get_stone(20, 19, 15 , 1, -5, -2);
-    assert_eq!(Space::intersect3d(a1,a2,b1,b2),(21.0,14.0,12.0));
-}
-
-#[test]
-fn test_i2()
-{
-    let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
-    let (b1,b2) = Space::get_stone(12, 31, 28 ,-1, -2, -1);
-    assert_eq!(Space::intersect3d(a1,a2,b1,b2),(6.0, 19.0, 22.0));
-}
-
 #[allow(unused)]
 fn is_same(a:(f64,f64,f64),b:(f64,f64,f64))->bool
 {
@@ -591,61 +364,7 @@ fn is_same(a:(f64,f64,f64),b:(f64,f64,f64))->bool
     panic!("wrong");
 }
 
-#[test]
-fn test_i3()
-{
-    let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
-    let (b1,b2) = Space::get_stone(20, 25, 34 ,-2, -2, -4);
-    is_same(Space::intersect3d(a1,a2,b1,b2),(12.0, 17.0, 18.0));
-}
 
 
-#[test]
-fn test_i4()
-{
-    let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
-    let (b1,b2) = Space::get_stone(18, 19, 22 , -1, -1, -2);
-    is_same(Space::intersect3d(a1,a2,b1,b2),(15.0, 16.0, 16.0));
-}
-
-#[test]
-fn test_i5()
-{
-    let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
-    let (b1,b2) = Space::get_stone(19, 13, 30 , -2, 1, -2);
-    is_same(Space::intersect3d(a1,a2,b1,b2),(9.0, 18.0, 20.0));
-}
 
 
-#[test]
-fn test_try1()
-{
-    let data = get_test_data();
-    let mut w = Space::new();
-    w.fill(&data);
-
-    let (a1,a2) = Space::get_stone_raw(24, 13, 10 ,-3,  1,  2);
-    assert_eq!(w.try_throw(4,a1,a2),true);
-    //w.count2()
-
-    //let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
-    //let (b1,b2) = Space::get_stone(19, 13, 30 , -2, 1, -2);
-    //is_same(Space::intersect3d(a1,a2,b1,b2),(9.0, 18.0, 20.0));
-}
-
-
-#[test]
-fn test_try2()
-{
-    let data = get_test_data();
-    let mut w = Space::new();
-    w.fill(&data);
-
-    let (a1,a2) = Space::get_stone(20, 15, 10 ,-1,  1,  2);
-    assert_eq!(w.try_throw(4,a1,a2),false);
-    //w.count2()
-
-    //let (a1,a2) = Space::get_stone(24, 13, 10 ,-3,  1,  2);
-    //let (b1,b2) = Space::get_stone(19, 13, 30 , -2, 1, -2);
-    //is_same(Space::intersect3d(a1,a2,b1,b2),(9.0, 18.0, 20.0));
-}
