@@ -30,12 +30,12 @@ impl Vec3f {
     #[allow(unused)]
     pub fn len(&self)->f64
     {
-        ((self.x*self.x + self.y*self.y + self.z*self.z) as f64).sqrt()
+        (self.x*self.x + self.y*self.y + self.z*self.z).sqrt()
     }
 
     pub fn length(v:&Vec3f)->f64
     {
-        ((v.x*v.x + v.y*v.y + v.z*v.z) as f64).sqrt()
+        (v.x*v.x + v.y*v.y + v.z*v.z).sqrt()
     }
 
     #[allow(unused)]

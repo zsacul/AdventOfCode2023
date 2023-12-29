@@ -395,10 +395,8 @@ impl Pipes
 
         for l in cc
         {
-
             //combine l to string
-            let ss:String = l.iter().collect();
-            
+            let ss:String = l.iter().collect();            
             res.push(ss);
             //println!("{}",ss);
         }
@@ -421,20 +419,6 @@ impl Pipes
             ('R','U') => '┘',
             ('R','D') => '┐',
             ('R','R') => '-',
-/*
-            '└' => (dx== 1 && dy== 0 && Self::R_DIR.contains(b)) ||
-                   (dx== 0 && dy==-1 && Self::U_DIR.contains(b)) ,
-            '┘' => (dx==-1 && dy== 0 && Self::L_DIR.contains(b)) ||
-                   (dx== 0 && dy==-1 && Self::U_DIR.contains(b)) ,
-            '┐' => (dx==-1 && dy== 0 && Self::L_DIR.contains(b)) ||
-                   (dx== 0 && dy== 1 && Self::D_DIR.contains(b)) ,
-            '┌' => (dx== 1 && dy== 0 && Self::R_DIR.contains(b)) ||
-                   (dx== 0 && dy== 1 && Self::D_DIR.contains(b)) ,
-            '-' => (dx== 1 && dy== 0 && Self::R_DIR.contains(b)) ||
-                   (dx==-1 && dy== 0 && Self::L_DIR.contains(b)) ,
-            '|' => (dx== 0 && dy== 1 && Self::D_DIR.contains(b)) ||
-                   (dx== 0 && dy==-1 && Self::U_DIR.contains(b)) ,
-*/
              _  => 'S',
         }  
 
@@ -494,7 +478,7 @@ impl Pipes
 
     fn solve(&mut self,moves:&Vec<(char,usize)>)->usize
     {
-        println!("moves:{:?}",moves);
+        //println!("moves:{:?}",moves);
 
         let len:usize = moves.iter()
               .map(|(_,n)|n)
@@ -530,7 +514,7 @@ impl Pipes
 
         self.corners.insert(Vec2::new(0,0),Self::get_dir(prev,moves[0].0));
 
-        println!("corners: {:?}",self.corners);
+        //println!("corners: {:?}",self.corners);
         
 
         Self::sholeace_polygon_area(points) + len/2 +1
@@ -606,7 +590,7 @@ impl Pipes
                 }
                   else
                 {
-                    on=!on;
+                    on = !on;
                 }
                 
                // println!("x:{},y:{} c:{} prev:{} on:{}",x,y,c,prev,on);
@@ -641,7 +625,7 @@ impl Pipes
     }
 
     #[allow(unused)]
-    fn traceO(&self,y:i64,ups:&Vec<(Vec2,Vec2)>)->usize
+    fn trace_o(&self,y:i64,ups:&Vec<(Vec2,Vec2)>)->usize
     {
         let mut on = false;
         let mut res = 0;

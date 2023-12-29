@@ -33,7 +33,7 @@ impl Vec3 {
     };        
     
     #[allow(unused)]
-    pub fn to_vec3f(&self)->Vec3f
+    pub fn to_vec3f(self)->Vec3f
     {
         Vec3f
         {

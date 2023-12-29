@@ -134,10 +134,10 @@ impl Space {
         {
             for b in a+1..self.points.len()
             {
-                let p1 = Vec2::new(self.points[a].pos.x as i64,self.points[a].pos.y as i64);
-                let d1 = Vec2::new(self.points[a].dir.x as i64,self.points[a].dir.y as i64);
-                let p2 = Vec2::new(self.points[b].pos.x as i64,self.points[b].pos.y as i64);
-                let d2 = Vec2::new(self.points[b].dir.x as i64,self.points[b].dir.y as i64);
+                let p1 = Vec2::new(self.points[a].pos.x,self.points[a].pos.y);
+                let d1 = Vec2::new(self.points[a].dir.x,self.points[a].dir.y);
+                let p2 = Vec2::new(self.points[b].pos.x,self.points[b].pos.y);
+                let d2 = Vec2::new(self.points[b].dir.x,self.points[b].dir.y);
 
                 let sx = (from,to);
                 let sy = (from,to);

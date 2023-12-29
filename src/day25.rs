@@ -217,7 +217,7 @@ impl World
             if cut1!=all_nodes && cut1>0
             {
                 let cut2 = all_nodes-cut1;
-                println!("cut1:{} cut2:{}",cut1,cut2);
+                //println!("cut1:{} cut2:{}",cut1,cut2);
                 return cut1*cut2;                         
             }
         }

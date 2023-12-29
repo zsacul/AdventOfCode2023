@@ -1,7 +1,7 @@
 use timer::Timer;
 mod tools;
-//use std::thread;
 mod dijkstria;
+//use std::thread;
 //mod cycliclist;
 //mod cyclic2;
 mod timer;
@@ -36,7 +36,6 @@ mod day25;
 
 
 fn main() {
-    /*
     {
         let _timer = Timer::new();
         let day1_data    = tools::read_1d_string("data/day01.txt");
@@ -60,9 +59,9 @@ fn main() {
     }
     
     {
-        let _timer = Timer::new();
-        let day5_data  = tools::read_1d_string("data/day05.txt");
-        day05::solve(&day5_data);
+        //let _timer = Timer::new();
+        //let day5_data  = tools::read_1d_string("data/day05.txt");
+        //day05::solve(&day5_data);
     }
     
     {
@@ -88,11 +87,13 @@ fn main() {
         let day9_data  = tools::read_1d_string("data/day09.txt");
         day09::solve(&day9_data);
     }
+
     {
         let _timer = Timer::new();
         let day10_data  = tools::read_1d_string("data/day10.txt");
         day10::solve(&day10_data);
     }
+
     {
         let _timer = Timer::new();
         let day11_data  = tools::read_1d_string("data/day11.txt");
@@ -110,11 +111,13 @@ fn main() {
         let day13_data  = tools::read_1d_string("data/day13.txt");
         day13::solve(&day13_data);
     }
+
     {
         let _timer = Timer::new();
         let day14_data  = tools::read_1d_string("data/day14.txt");
         day14::solve(&day14_data);
     }
+    
     {
         let _timer = Timer::new();
         let day15_data  = tools::read_1d_string("data/day15.txt");
@@ -145,33 +148,31 @@ fn main() {
     }
     
     {
-        //  let _timer = Timer::new();
-        //        let day20_data  = tools::read_1d_string("data/day20.txt");
-        //     day20::solve(&day20_data);
-    }
-    {
         let _timer = Timer::new();
-        let day21_data  = tools::read_1d_string("data/day21.txt");
-        day21::solve(&day21_data);
+        let day20_data  = tools::read_1d_string("data/day20.txt");
+        day20::solve(&day20_data);
     }
     
     {
-        let _timer = Timer::new();
-        let day22_data  = tools::read_1d_string("data/day22.txt");       
-        day22::solve(&day22_data);
+        //let _timer = Timer::new();
+        //let day21_data  = tools::read_1d_string("data/day21.txt");
+        //day21::solve(&day21_data);
     }
-    
+
+    {
+        //let _timer = Timer::new();
+        //let day22_data  = tools::read_1d_string("data/day22.txt");       
+        //day22::solve(&day22_data);
+    }
     
     {
-        let child = thread::Builder::new().stack_size(32 * 1024 * 1024).spawn(move || { 
-            let _timer = Timer::new();
-            let day23_data  = tools::read_1d_string("data/day23.txt");
-            day23::solve(&day23_data);       
-        }).unwrap(); 
-        child.join().unwrap();
+        //let child = thread::Builder::new().stack_size(32 * 1024 * 1024).spawn(move || { 
+        //    let _timer = Timer::new();
+        //    let day23_data  = tools::read_1d_string("data/day23.txt");
+        //    day23::solve(&day23_data);       
+        //}).unwrap(); 
+        //child.join().unwrap();
     }
-    */
-    
     
     {
         let _timer = Timer::new();
@@ -179,11 +180,11 @@ fn main() {
         day24::solve(&day24_data);       
     }
     
-    /*
+    
     {
         let _timer = Timer::new();
         let day25_data  = tools::read_1d_string("data/day25.txt");
         day25::solve(&day25_data);
     }
-     */   
+      
 }
