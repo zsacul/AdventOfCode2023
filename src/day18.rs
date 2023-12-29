@@ -53,6 +53,7 @@ impl Pipes
         }
     }    
 
+    #[allow(unused)]
     fn count(&mut self,f:char)->usize
     {
         let mut res = 0;
@@ -67,6 +68,7 @@ impl Pipes
         res
     }
 
+    #[allow(unused)]
     fn grow(f:&Pipes)->Self
     {
         let dx3 = 3*f.dx;
@@ -128,6 +130,7 @@ impl Pipes
         p.x>=0 && p.y>=0 && p.x<self.dx as i64 && p.y<self.dy as i64     
     }
 
+    #[allow(unused)]
     fn find_pos(&self,s:char)->Vec2
     {
         for y in 0..self.dy
@@ -202,6 +205,7 @@ impl Pipes
         }     
     }
 
+    #[allow(unused)]
     fn move_okb(&self,a:Vec2,b:Vec2)->bool
     {
         if self.pos_ok_v(a) && self.pos_ok_v(b)
@@ -218,6 +222,7 @@ impl Pipes
         false
     }
 
+    #[allow(unused)]
     fn flood(&mut self,p:Vec2,len:usize)
     {       
         let mut queue = VecDeque::new();
@@ -242,6 +247,7 @@ impl Pipes
         }
     }
 
+    #[allow(unused)]
     fn copy(&mut self)
     {
         for y in 0..self.dy
@@ -256,11 +262,13 @@ impl Pipes
         }
     }
 
+    #[allow(unused)]
     fn elem(&self,p:Vec2)->char
     {
         if self.pos_ok_v(p) { self.field[p.y as usize][p.x as usize] } else { '.' }
     }
 
+    #[allow(unused)]
     fn replace_s(&mut self,p:Vec2)
     {
         let right = Self::R_DIR.contains(self.elem(p.r()));
@@ -276,6 +284,7 @@ impl Pipes
         self.field[p.y as usize][p.x as usize] = c;      
     }
 
+    #[allow(unused)]
     fn flood_o(&mut self,p:Vec2)
     {       
         let mut queue = VecDeque::new();
@@ -297,6 +306,7 @@ impl Pipes
         }
     }
 
+    #[allow(unused)]
     fn fill(&mut self,p:Vec2,dir:char,n:usize,color:usize)
     {
         let mut p = p;
@@ -314,9 +324,9 @@ impl Pipes
         }
     }
 
+    #[allow(unused)]
     fn dig(&mut self,data:&[String])->(Vec<String>,usize)
     {
-        
         //self.dy = data.len();
         //self.dx = data[0].len();
         let mut pos = Vec2::new(0,0);
@@ -334,7 +344,6 @@ impl Pipes
             
             res.push(s);
             //self.fill(pos,dir,n,c);
-            
         }
 
         let cmd = res.join("");
@@ -396,8 +405,6 @@ impl Pipes
         (res,cmd.len())
     }
 
-
-
     fn get_dir(p:char,n:char)->char
     {
         match (p,n)
@@ -435,7 +442,7 @@ impl Pipes
 
     fn dig1(&mut self,data:&[String])->usize
     {
-        let mut pos = Vec2::new(0,0);
+        //let mut pos = Vec2::new(0,0);
         let mov =  data.iter()
         .map(|l|
             {
@@ -450,12 +457,11 @@ impl Pipes
         ).collect::<Vec<(char,usize)>>();
 
         self.solve(&mov)
-
     }
 
     fn dig2(&mut self,data:&[String])->usize
     {
-        let mut pos = Vec2::new(0,0);
+        //let mut pos = Vec2::new(0,0);
         let mov =  data.iter()
             .map(|l|
             {
@@ -491,7 +497,7 @@ impl Pipes
         println!("moves:{:?}",moves);
 
         let len:usize = moves.iter()
-              .map(|(d,n)|n)
+              .map(|(_,n)|n)
               .cloned()
               .sum();
 
@@ -527,8 +533,8 @@ impl Pipes
         println!("corners: {:?}",self.corners);
         
 
-        return Self::sholeace_polygon_area(points) + len/2 +1;
-
+        Self::sholeace_polygon_area(points) + len/2 +1
+    /*
         //let minx = points.iter().map(|k| k.x).min().unwrap();
         let miny = points.iter().map(|k| k.y).min().unwrap();
         //let maxx = points.iter().map(|k| k.x).max().unwrap();
@@ -555,9 +561,10 @@ impl Pipes
 
         //len
         fill
-
+    */
     }
 
+    #[allow(unused)]
     fn trace(&self,y:i64,ups:&Vec<(Vec2,Vec2)>)->usize
     {
         let mut on = false;
@@ -633,7 +640,7 @@ impl Pipes
         1 + res as usize
     }
 
-
+    #[allow(unused)]
     fn traceO(&self,y:i64,ups:&Vec<(Vec2,Vec2)>)->usize
     {
         let mut on = false;
@@ -682,7 +689,7 @@ impl Pipes
 pub fn part1(data:&[String])->usize
 {
     let mut f = Pipes::new(data);
-     f.dig1(data)
+    f.dig1(data)
 /*     
     let mut f = Pipes::new(data);
     let (res,cmd_len) = f.dig(data);

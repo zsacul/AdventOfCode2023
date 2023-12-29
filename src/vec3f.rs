@@ -45,9 +45,9 @@ impl Vec3f {
         if l>0.0
         {
             return Self {
-                x : (self.x as f64 / l),
-                y : (self.y as f64 / l),
-                z : (self.z as f64 / l), 
+                x : self.x/l,
+                y : self.y/l,
+                z : self.z/l, 
             }
         }
         *self
@@ -91,13 +91,13 @@ impl Vec3f {
         }
     }
 
+    #[allow(unused)]
     fn tangents(n:Vec3f)->(Vec3f,Vec3f)
     {	
-        //Vec3 r,
         let mut up = Vec3f::new(0.0,1.0,0.0);
         let mut n = n.normalize();
           
-        let mut r  = Self::cross(&up,&n);//up_m.cross(up, viewDirection_m ).unitize();
+        let mut r  = Self::cross(&up,&n);
         r  = r.normalize();
     
         if (Self::length(&r)-1.0).abs()<0.0001
@@ -111,34 +111,22 @@ impl Vec3f {
            r  = Self::cross(&up,&n);
            r  = r.normalize();
         }
-            
-        //if ((n[1]==1 || n[1]==-1) && n[0]==0 && n[2]==0)
-        //{
-        //	r = Vec3(1,0,0);		
-        //}
-     //   else r = cross(n,up);
-    
-        //unitize(r);
-        //up = cross(n,r);
-        //unitize(up);
-    
-        //u = up;
-        //v = r;
+
         (up,r)
     }
 
-
+    #[allow(unused)]
     fn project_to_plane(point:Vec3f,n:Vec3f)->Vec3f
     {
         let res = point -n*Self::dot(&n,&point);
     
         //Vec3f u,v;
         let (u,v) = Self::tangents(n);
-        return Vec3f::new( Self::dot(&n,&res), Self::dot(&u,&res), Self::dot(&v,&res) );
+        Vec3f::new( Self::dot(&n,&res), Self::dot(&u,&res), Self::dot(&v,&res) )
         //return ToLocal(res,n,u,v);
     }
-    
-    //Returns the closest point on a line to a given point
+        
+    #[allow(unused)]
     fn closest_point_on_line(a:Vec3f,b:Vec3f,v_point:Vec3f)->Vec3f
     {
       //First, we create a vector from our end point vA to our point vPoint
